@@ -55,12 +55,12 @@ export const DiaryNavExtended = () => {
           <div className="flex items-center">
             <Avatar className="h-9 w-9 mr-2">
               <AvatarFallback className="bg-diary-lavender text-diary-purple dark:bg-diary-purple/20 dark:text-white">
-                {user?.username?.substring(0, 2).toUpperCase() || "DP"}
+                {user?.username ? user.username.substring(0, 2).toUpperCase() : "DP"}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-sm font-medium dark:text-white">{user?.username}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+              <p className="text-sm font-medium dark:text-white">{user?.username || "Guest"}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || "Not logged in"}</p>
             </div>
           </div>
           <ThemeToggle />
