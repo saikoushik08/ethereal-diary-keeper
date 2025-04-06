@@ -43,7 +43,7 @@ function Book({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => vo
       {/* Front cover */}
       <mesh position={[0, 0, 0.1]}>
         <boxGeometry args={[3, 4, 0.2]} />
-        <meshStandardMaterial color="#D4AF37" />
+        <meshStandardMaterial color="#9b87f5" />
       </mesh>
 
       {/* Pages */}
@@ -55,7 +55,7 @@ function Book({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => vo
       {/* Back cover */}
       <mesh position={[0, 0, -0.1]}>
         <boxGeometry args={[3, 4, 0.2]} />
-        <meshStandardMaterial color="#1A1A1A" />
+        <meshStandardMaterial color="#D3E4FD" />
       </mesh>
       
       {/* Title text (fake) */}
@@ -64,7 +64,7 @@ function Book({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => vo
         <meshBasicMaterial 
           transparent
           opacity={0.9}
-          color="#1A1A1A" 
+          color="#ffffff" 
         />
       </mesh>
     </group>
@@ -78,20 +78,20 @@ export const ThreeBook = () => {
   return (
     <div className="h-screen w-screen flex items-center justify-center overflow-hidden">
       <div className="absolute z-10 top-8 left-8 text-4xl md:text-5xl font-serif font-bold">
-        <span className="text-diary-gold">Dear</span>
-        <span className="text-white">Diary</span>
+        <span className="text-diary-purple">Dear</span>
+        <span className="text-diary-dark">Diary</span>
       </div>
       
       <div className="absolute w-full max-w-4xl flex flex-col md:flex-row items-center px-6">
         <div className={`w-full md:w-1/2 transform transition-all duration-700 ${open ? 'opacity-0 -translate-x-20' : 'opacity-100'}`}>
-          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 text-white">
+          <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6">
             Your digital sanctuary
           </h1>
-          <p className="text-lg text-gray-400 mb-8">
+          <p className="text-lg text-gray-600 mb-8">
             Capture your thoughts, track your journey, and gain insights with AI-powered analysis.
           </p>
           <Button 
-            className="bg-diary-gold hover:bg-diary-gold/90 text-diary-black px-8 py-6 text-lg rounded-full"
+            className="bg-diary-purple hover:bg-diary-purple/90 text-white px-8 py-6 text-lg rounded-full"
             onClick={() => setOpen(true)}
           >
             Get Started
@@ -111,7 +111,7 @@ export const ThreeBook = () => {
               minPolarAngle={Math.PI / 3}
               maxPolarAngle={Math.PI / 1.5}
             />
-            <Environment preset="night" />
+            <Environment preset="sunset" />
           </Canvas>
         </div>
       </div>
@@ -120,16 +120,16 @@ export const ThreeBook = () => {
       <div 
         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
-        <div className="bg-diary-dark/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl w-full max-w-md animate-fade-in border border-diary-gold/20">
+        <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl w-full max-w-md animate-fade-in">
           <div className="flex justify-between mb-8">
             <button 
-              className={`text-lg font-medium pb-2 px-4 ${showLogin ? 'text-diary-gold border-b-2 border-diary-gold' : 'text-gray-400'}`}
+              className={`text-lg font-medium pb-2 px-4 ${showLogin ? 'text-diary-purple border-b-2 border-diary-purple' : 'text-gray-400'}`}
               onClick={() => setShowLogin(true)}
             >
               Login
             </button>
             <button 
-              className={`text-lg font-medium pb-2 px-4 ${!showLogin ? 'text-diary-gold border-b-2 border-diary-gold' : 'text-gray-400'}`}
+              className={`text-lg font-medium pb-2 px-4 ${!showLogin ? 'text-diary-purple border-b-2 border-diary-purple' : 'text-gray-400'}`}
               onClick={() => setShowLogin(false)}
             >
               Sign Up
@@ -140,7 +140,7 @@ export const ThreeBook = () => {
           
           <Button 
             variant="outline" 
-            className="mt-4 w-full border-diary-gold/50 text-diary-gold hover:bg-diary-gold/10"
+            className="mt-4 w-full"
             onClick={() => setOpen(false)}
           >
             Back to Book
