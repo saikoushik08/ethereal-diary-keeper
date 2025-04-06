@@ -33,9 +33,11 @@ export default {
           purple: "#9b87f5",
           lavender: "#E5DEFF",
           blue: "#D3E4FD",
-          dark: "#1A1F2C",
+          dark: "#1A1A1A", // Updated to black
           gray: "#8E9196",
           light: "#F1F0FB",
+          gold: "#D4AF37", // Added gold color
+          black: "#121212", // Added deeper black
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",

@@ -13,28 +13,25 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   useEffect(() => {
     // Check if user has previously set a theme preference
     const savedTheme = localStorage.getItem("theme");
     
-    // If there's a saved preference, use it
-    if (savedTheme === "dark") {
+    // Always use dark mode (black and gold theme) by default
+    if (savedTheme === "light") {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    } else {
+      // For any other case, default to dark mode
       setIsDarkMode(true);
       document.documentElement.classList.add("dark");
-    } else if (savedTheme === "light" || !savedTheme) {
-      // Default to light mode if no preference or explicitly light
-      setIsDarkMode(false);
-      document.documentElement.classList.remove("dark");
+      
       // Save the preference if not already saved
       if (!savedTheme) {
-        localStorage.setItem("theme", "light");
+        localStorage.setItem("theme", "dark");
       }
-    } else {
-      // For any other case, default to light
-      setIsDarkMode(false);
-      document.documentElement.classList.remove("dark");
     }
   }, []);
 
