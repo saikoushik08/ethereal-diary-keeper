@@ -23,16 +23,18 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     if (savedTheme === "dark") {
       setIsDarkMode(true);
       document.documentElement.classList.add("dark");
-    } else if (savedTheme === "light") {
+    } else if (savedTheme === "light" || !savedTheme) {
+      // Default to light mode if no preference or explicitly light
       setIsDarkMode(false);
       document.documentElement.classList.remove("dark");
-    } else {
-      // If no saved preference, check system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setIsDarkMode(prefersDark);
-      if (prefersDark) {
-        document.documentElement.classList.add("dark");
+      // Save the preference if not already saved
+      if (!savedTheme) {
+        localStorage.setItem("theme", "light");
       }
+    } else {
+      // For any other case, default to light
+      setIsDarkMode(false);
+      document.documentElement.classList.remove("dark");
     }
   }, []);
 

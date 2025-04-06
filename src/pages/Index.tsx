@@ -18,15 +18,15 @@ const Index = () => {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-diary-light dark:from-diary-dark dark:to-diary-dark flex items-center justify-center">
-        <p className="text-xl text-diary-purple dark:text-white">Loading...</p>
+      <div className="min-h-screen bg-gradient-to-br from-white to-diary-light flex items-center justify-center">
+        <p className="text-xl text-diary-purple">Loading...</p>
       </div>
     );
   }
 
   // If not authenticated, show the landing page with the 3D book
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-diary-light dark:from-diary-dark dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-white to-diary-light">
       <ThreeBook />
     </div>
   );
