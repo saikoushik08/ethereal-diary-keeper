@@ -11,12 +11,12 @@ export function ThemeToggle() {
       variant="ghost" 
       size="icon" 
       onClick={toggleTheme}
-      className="h-9 w-9 rounded-md transition-colors"
+      className="h-9 w-9 rounded-md transition-colors border border-diary-gold/30"
       title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDarkMode ? 
-        <Sun className="h-5 w-5 text-gray-200" /> : 
-        <Moon className="h-5 w-5 text-gray-700" />
+        <Sun className="h-5 w-5 text-diary-gold" /> : 
+        <Moon className="h-5 w-5 text-diary-gold" />
       }
       <span className="sr-only">{isDarkMode ? "Switch to light mode" : "Switch to dark mode"}</span>
     </Button>
