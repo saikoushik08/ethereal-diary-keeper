@@ -13,7 +13,7 @@ const DiaryEntry = () => {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <DiaryNav />
       
       <div className="pl-64 pt-8 pr-8 pb-8">

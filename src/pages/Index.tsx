@@ -15,7 +15,7 @@ const Index = () => {
   }, [isAuthenticated, isLoading, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-diary-light">
+    <div className="min-h-screen bg-white">
       <ThreeBook />
     </div>
   );
