@@ -1,7 +1,8 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { useGLTF, OrbitControls, Environment, useTexture } from "@react-three/drei";
+import { useGLTF, OrbitControls, Environment } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
@@ -10,9 +11,6 @@ import { SignupForm } from "./SignupForm";
 function DiaryBook({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const bookRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  
-  // Load the diary cover texture
-  const coverTexture = useTexture("/diary-cover.jpg");
   
   useEffect(() => {
     camera.position.set(0, 0, 5);
@@ -42,12 +40,13 @@ function DiaryBook({ open, setOpen }: { open: boolean; setOpen: (open: boolean) 
       onClick={() => setOpen(!open)}
       position={[0, 0, 0]}
     >
-      {/* Front cover with image texture */}
+      {/* Front cover with purple color */}
       <mesh position={[0, 0, 0.1]}>
         <boxGeometry args={[3, 4, 0.2]} />
         <meshStandardMaterial 
-          map={coverTexture} 
-          bumpScale={0.05}
+          color="#9b87f5"
+          roughness={0.7}
+          metalness={0.1}
         />
       </mesh>
 
