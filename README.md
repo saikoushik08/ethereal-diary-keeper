@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to our project!
 
 ## Project info
 
@@ -36,12 +36,6 @@ npm i
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
 **Use GitHub Codespaces**
 
 - Navigate to the main page of your repository.
@@ -63,10 +57,6 @@ This project is built with:
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/54d6fb8e-c9fb-4be2-a85b-6993290ba611) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
