@@ -2,13 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { useGLTF, OrbitControls, Environment } from "@react-three/drei";
+import { useGLTF, OrbitControls, Environment, useTexture } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
 
 // Simple Book component when not using a full GLTF model
-function Book({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
+function DiaryBook({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const bookRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   
@@ -34,16 +34,65 @@ function Book({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => vo
     }
   });
 
+  // Create a texture with canvas
+  const [coverTexture] = useState(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 768;
+    const context = canvas.getContext("2d");
+    
+    if (context) {
+      // Background gradient
+      const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#9b87f5");
+      gradient.addColorStop(1, "#7e6ad3");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add some decorative patterns
+      context.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      context.lineWidth = 2;
+      
+      // Border
+      context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+      
+      // Diary title
+      context.font = "bold 48px serif";
+      context.textAlign = "center";
+      context.fillStyle = "white";
+      context.fillText("Dear Diary", canvas.width / 2, 150);
+      
+      // Some decorative flourishes
+      context.beginPath();
+      context.moveTo(canvas.width/2 - 100, 180);
+      context.lineTo(canvas.width/2 + 100, 180);
+      context.stroke();
+      
+      // Add a simple decorative pattern
+      for (let i = 0; i < 10; i++) {
+        context.beginPath();
+        context.arc(canvas.width/2, canvas.height/2 + 100, 50 + i*15, 0, Math.PI * 2);
+        context.stroke();
+      }
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  });
+
   return (
     <group 
       ref={bookRef} 
       onClick={() => setOpen(!open)}
       position={[0, 0, 0]}
     >
-      {/* Front cover */}
+      {/* Front cover with generated texture */}
       <mesh position={[0, 0, 0.1]}>
         <boxGeometry args={[3, 4, 0.2]} />
-        <meshStandardMaterial color="#9b87f5" />
+        <meshStandardMaterial 
+          map={coverTexture} 
+          bumpScale={0.05}
+        />
       </mesh>
 
       {/* Pages */}
@@ -58,14 +107,10 @@ function Book({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => vo
         <meshStandardMaterial color="#D3E4FD" />
       </mesh>
       
-      {/* Title text (fake) */}
-      <mesh position={[0, 0, 0.2]}>
-        <planeGeometry args={[2, 1]} />
-        <meshBasicMaterial 
-          transparent
-          opacity={0.9}
-          color="#ffffff" 
-        />
+      {/* Ribbon bookmark */}
+      <mesh position={[0, -1.8, 0.4]} rotation={[0, 0, Math.PI / 4]}>
+        <boxGeometry args={[0.1, 1, 0.01]} />
+        <meshStandardMaterial color="#ff5555" />
       </mesh>
     </group>
   );
@@ -102,9 +147,9 @@ export const ThreeBook = () => {
         <div className="w-full md:w-1/2 h-[500px] book-container">
           <Canvas className="w-full h-full" shadows>
             <ambientLight intensity={0.5} />
-            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
+            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1.5} />
             <pointLight position={[-10, -10, -10]} />
-            <Book open={open} setOpen={setOpen} />
+            <DiaryBook open={open} setOpen={setOpen} />
             <OrbitControls 
               enableZoom={false} 
               enablePan={false}
