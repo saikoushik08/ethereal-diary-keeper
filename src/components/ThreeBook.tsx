@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
@@ -11,6 +10,9 @@ import { SignupForm } from "./SignupForm";
 function DiaryBook({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const bookRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
+  
+  // Load the diary cover texture
+  const coverTexture = useTexture("/diary-cover.jpg");
   
   useEffect(() => {
     camera.position.set(0, 0, 5);
@@ -34,59 +36,13 @@ function DiaryBook({ open, setOpen }: { open: boolean; setOpen: (open: boolean) 
     }
   });
 
-  // Create a texture with canvas
-  const [coverTexture] = useState(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 768;
-    const context = canvas.getContext("2d");
-    
-    if (context) {
-      // Background gradient
-      const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#9b87f5");
-      gradient.addColorStop(1, "#7e6ad3");
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Add some decorative patterns
-      context.strokeStyle = "rgba(255, 255, 255, 0.2)";
-      context.lineWidth = 2;
-      
-      // Border
-      context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-      
-      // Diary title
-      context.font = "bold 48px serif";
-      context.textAlign = "center";
-      context.fillStyle = "white";
-      context.fillText("Dear Diary", canvas.width / 2, 150);
-      
-      // Some decorative flourishes
-      context.beginPath();
-      context.moveTo(canvas.width/2 - 100, 180);
-      context.lineTo(canvas.width/2 + 100, 180);
-      context.stroke();
-      
-      // Add a simple decorative pattern
-      for (let i = 0; i < 10; i++) {
-        context.beginPath();
-        context.arc(canvas.width/2, canvas.height/2 + 100, 50 + i*15, 0, Math.PI * 2);
-        context.stroke();
-      }
-    }
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    return texture;
-  });
-
   return (
     <group 
       ref={bookRef} 
       onClick={() => setOpen(!open)}
       position={[0, 0, 0]}
     >
-      {/* Front cover with generated texture */}
+      {/* Front cover with image texture */}
       <mesh position={[0, 0, 0.1]}>
         <boxGeometry args={[3, 4, 0.2]} />
         <meshStandardMaterial 
