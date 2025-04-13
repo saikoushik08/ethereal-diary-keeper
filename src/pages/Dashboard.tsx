@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, profile, isAuthenticated, isLoading } = useAuth();
   const isMobile = useIsMobile();
 
   // Redirect to login if not authenticated
@@ -59,7 +59,7 @@ const Dashboard = () => {
       <div className={contentClass}>
         <header className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-serif font-medium">
-            Hello, <span className="text-diary-purple">{user?.username || "there"}</span>
+            Hello, <span className="text-diary-purple">{profile?.username || "there"}</span>
           </h1>
           <p className="text-sm md:text-base text-gray-500">
             {new Date().toLocaleDateString("en-US", {
