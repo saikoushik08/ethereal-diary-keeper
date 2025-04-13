@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BookText, Calendar, BarChart2 } from "lucide-react";
 
 const Profile = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, profile, isAuthenticated, isLoading } = useAuth();
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
@@ -45,8 +45,8 @@ const Profile = () => {
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex flex-col items-center">
                     <Avatar className="w-32 h-32 mb-4">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.username || "User"}`} alt={user?.username} />
-                      <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || "U"}</AvatarFallback>
+                      <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${profile?.username || "User"}`} alt={profile?.username} />
+                      <AvatarFallback>{profile?.username?.substring(0, 2).toUpperCase() || "U"}</AvatarFallback>
                     </Avatar>
                     <Button variant="outline" size="sm">
                       Change Avatar
@@ -57,7 +57,7 @@ const Profile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="username">Username</Label>
-                        <Input id="username" defaultValue={user?.username} />
+                        <Input id="username" defaultValue={profile?.username} />
                       </div>
                       <div>
                         <Label htmlFor="email">Email</Label>
