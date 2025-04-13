@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, BookText, BarChart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const isMobile = useIsMobile();
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
@@ -45,16 +47,21 @@ const Dashboard = () => {
     return emojis[mood] || "😐";
   };
 
+  // Adjust content padding based on screen size and sidebar state
+  const contentClass = isMobile 
+    ? "pt-20 px-4 pb-8 w-full" 
+    : "pl-24 md:pl-24 lg:pl-64 pt-8 pr-4 md:pr-8 pb-8";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DiaryNav />
       
-      <div className="pl-64 pt-8 pr-8 pb-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-serif font-medium">
+      <div className={contentClass}>
+        <header className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-serif font-medium">
             Hello, <span className="text-diary-purple">{user?.username || "there"}</span>
           </h1>
-          <p className="text-gray-500">
+          <p className="text-sm md:text-base text-gray-500">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
@@ -64,7 +71,7 @@ const Dashboard = () => {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
           <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
@@ -108,8 +115,8 @@ const Dashboard = () => {
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <div className="font-medium">{entry.title}</div>
-                          <div className="text-sm text-gray-500">{entry.date}</div>
+                          <div className="font-medium text-sm md:text-base truncate max-w-[160px] md:max-w-[200px]">{entry.title}</div>
+                          <div className="text-xs md:text-sm text-gray-500">{entry.date}</div>
                         </div>
                         <div className="text-xl">{getMoodEmoji(entry.mood)}</div>
                       </div>
@@ -132,23 +139,23 @@ const Dashboard = () => {
             <CardContent>
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <div className="text-3xl font-bold">{recentEntries.length}</div>
-                  <div className="text-sm text-gray-500">Entries</div>
+                  <div className="text-2xl md:text-3xl font-bold">{recentEntries.length}</div>
+                  <div className="text-xs md:text-sm text-gray-500">Entries</div>
                 </div>
-                <Calendar size={48} className="text-diary-purple opacity-80" />
+                <Calendar size={36} className="text-diary-purple opacity-80" />
               </div>
               
               <div className="space-y-2">
-                <div className="text-sm font-medium mb-1">Mood Distribution</div>
+                <div className="text-xs md:text-sm font-medium mb-1">Mood Distribution</div>
                 {moodData.map((item) => (
                   <div key={item.mood} className="flex items-center">
                     <div 
-                      className="w-3 h-3 rounded-full mr-2"
+                      className="w-2 md:w-3 h-2 md:h-3 rounded-full mr-2"
                       style={{ backgroundColor: item.color }}
                     ></div>
-                    <div className="text-sm flex-1">{item.mood}</div>
+                    <div className="text-xs md:text-sm flex-1">{item.mood}</div>
                     <div 
-                      className="h-2 bg-gray-100 flex-grow mx-2 rounded-full overflow-hidden"
+                      className="h-1.5 md:h-2 bg-gray-100 flex-grow mx-2 rounded-full overflow-hidden"
                     >
                       <div 
                         className="h-full rounded-full"
@@ -158,7 +165,7 @@ const Dashboard = () => {
                         }}
                       ></div>
                     </div>
-                    <div className="text-sm text-gray-500 w-8 text-right">{item.count}</div>
+                    <div className="text-xs md:text-sm text-gray-500 w-6 md:w-8 text-right">{item.count}</div>
                   </div>
                 ))}
               </div>
