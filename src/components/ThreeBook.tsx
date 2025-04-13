@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
@@ -83,7 +84,7 @@ export const ThreeBook = () => {
   return (
     <div className="h-screen w-screen flex items-center justify-center overflow-hidden">
       <div className="absolute z-10 top-4 md:top-8 left-4 md:left-8 text-3xl md:text-4xl lg:text-5xl font-serif font-bold">
-        <span className="text-diary-purple">Dear</span>
+        <span className="text-diary-purple">Ethereal</span>
         <span className="text-diary-dark">Diary</span>
       </div>
       

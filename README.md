@@ -1,4 +1,5 @@
-# Welcome to our project!
+
+# ethereal-diary
 
 ## Project info
 
@@ -27,7 +28,7 @@ Follow these steps:
 git clone <YOUR_GIT_URL>
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd ethereal-diary
 
 # Step 3: Install the necessary dependencies.
 npm i
@@ -61,3 +62,4 @@ Simply open [Lovable](https://lovable.dev/projects/54d6fb8e-c9fb-4be2-a85b-69932
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```
