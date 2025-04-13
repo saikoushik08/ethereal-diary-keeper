@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { AlertCircle } from "lucide-react";
 
 export const SignupForm = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -19,8 +21,10 @@ export const SignupForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     
     if (password !== confirmPassword) {
+      setError("Passwords don't match");
       toast({
         title: "Passwords don't match",
         description: "Please make sure your passwords match.",
@@ -35,13 +39,14 @@ export const SignupForm = () => {
       await signup(username, email, password);
       toast({
         title: "Account created!",
-        description: "Welcome to your personal diary!",
+        description: "Welcome to your personal diary! Please check your email to confirm your account.",
       });
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || "There was an error creating your account.");
       toast({
         title: "Sign up failed",
-        description: "There was an error creating your account.",
+        description: error.message || "There was an error creating your account.",
         variant: "destructive",
       });
     } finally {
@@ -51,6 +56,12 @@ export const SignupForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 p-3 rounded-md flex items-start text-sm">
+          <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+          <span className="text-red-800">{error}</span>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="username">Username</Label>
         <Input
