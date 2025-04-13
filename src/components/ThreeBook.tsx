@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
@@ -71,12 +70,6 @@ function DiaryBook({ open, setOpen }: { open: boolean; setOpen: (open: boolean) 
       <mesh position={[0, 0, -0.1]}>
         <boxGeometry args={[3, 4, 0.2]} />
         <meshStandardMaterial color="#D3E4FD" />
-      </mesh>
-      
-      {/* Ribbon bookmark */}
-      <mesh position={[0, -1.8, 0.4]} rotation={[0, 0, Math.PI / 4]}>
-        <boxGeometry args={[0.1, 1, 0.01]} />
-        <meshStandardMaterial color="#ff5555" />
       </mesh>
     </group>
   );
