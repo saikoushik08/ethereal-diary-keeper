@@ -1,19 +1,23 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
 
-interface User {
+interface UserProfile {
   id: string;
   username: string;
-  email: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  profile: UserProfile | null;
+  session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  isLoading: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,66 +32,109 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user in localStorage
-    const storedUser = localStorage.getItem("diaryUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        // Fetch user profile if user is logged in
+        if (newSession?.user) {
+          setTimeout(() => {
+            fetchProfile(newSession.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Mock authentication functions for prototype
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock user for demo
-    const mockUser = {
-      id: "user-123",
-      username: email.split('@')[0],
-      email
-    };
-    
-    localStorage.setItem("diaryUser", JSON.stringify(mockUser));
-    setUser(mockUser);
-    setIsLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
   };
 
   const signup = async (username: string, email: string, password: string) => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock user for demo
-    const mockUser = {
-      id: "user-" + Date.now(),
-      username,
-      email
-    };
-    
-    localStorage.setItem("diaryUser", JSON.stringify(mockUser));
-    setUser(mockUser);
-    setIsLoading(false);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+        },
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem("diaryUser");
-    setUser(null);
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        profile,
+        session,
         isAuthenticated: !!user,
+        isLoading,
         login,
         signup,
         logout,
-        isLoading
       }}
     >
       {children}
