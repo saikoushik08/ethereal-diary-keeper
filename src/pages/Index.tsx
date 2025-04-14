@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Menu, ChevronRight } from "lucide-react";
-import ThreeBook from "@/components/ThreeBook";
+import LandingHero from "@/components/LandingHero";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -57,9 +58,9 @@ const Index = () => {
         </div>
       </header>
 
-      {/* ThreeBook with margin for fixed header */}
+      {/* Landing Hero with margin for fixed header */}
       <div className="pt-20 h-screen">
-        <ThreeBook />
+        <LandingHero />
       </div>
     </div>
   );
