@@ -32,7 +32,7 @@ const Index = () => {
         <div className="container mx-auto flex justify-between items-center py-4 px-4 md:px-6">
           <div className="flex items-center space-x-2">
             <span className="text-2xl font-bold text-white">Ethereal</span>
-            <span className="text-2xl font-bold text-diary-purple">Diary</span>
+            <span className="text-2xl font-bold text-purple">Diary</span>
           </div>
           <nav className="hidden md:flex space-x-4">
             <Button variant="ghost">Features</Button>
