@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ThreeBook from "@/components/ThreeBook";
 import { ChevronDown } from "lucide-react";
 
 interface LandingHeroProps {
@@ -26,7 +25,7 @@ export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
 
       <div className="w-full max-w-6xl flex flex-col md:flex-row items-center px-4 md:px-6">
         <div
-          className={`w-full md:w-1/2 transform transition-all duration-700 ${
+          className={`w-full md:w-full transform transition-all duration-700 ${
             showAuth ? "opacity-0 -translate-x-20" : "opacity-100"
           } text-center md:text-left`}
         >
@@ -36,18 +35,23 @@ export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
           <p className="text-base md:text-lg text-gray-300 mb-6 md:mb-8 px-6 md:px-0">
             Capture your thoughts, track your journey, and gain insights with AI-powered analysis.
           </p>
-          <Button
-            aria-label="Get Started"
-            className="bg-diary-purple hover:bg-diary-purple/90 text-white px-6 py-4 md:px-8 md:py-6 text-base md:text-lg rounded-full transition-all duration-300"
-            onClick={onScrollDown}
-          >
-            Get Started
-          </Button>
-        </div>
-
-        {/* 3D Book Animation */}
-        <div className="w-full md:w-1/2 h-[350px] md:h-[500px] mt-8 md:mt-0 flex items-center justify-center">
-          <ThreeBook />
+          <div className="flex flex-col md:flex-row gap-4 justify-center md:justify-start">
+            <Button
+              aria-label="Try It Now"
+              className="bg-diary-purple hover:bg-diary-purple/90 text-white px-6 py-4 md:px-8 md:py-6 text-base md:text-lg rounded-full transition-all duration-300"
+              onClick={() => setShowAuth(true)}
+            >
+              Try It
+            </Button>
+            <Button
+              aria-label="Get Started"
+              variant="outline"
+              className="border-white text-white hover:bg-white/10 px-6 py-4 md:px-8 md:py-6 text-base md:text-lg rounded-full transition-all duration-300"
+              onClick={onScrollDown}
+            >
+              Get Started
+            </Button>
+          </div>
         </div>
       </div>
 
