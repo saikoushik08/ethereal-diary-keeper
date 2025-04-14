@@ -4,21 +4,27 @@ import { Button } from "@/components/ui/button";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ThreeBook from "@/components/ThreeBook";
+import { ChevronDown } from "lucide-react";
 
-export const LandingHero = () => {
+interface LandingHeroProps {
+  onScrollDown: () => void;
+}
+
+export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
   const [showAuth, setShowAuth] = useState(false);
   const [showLogin, setShowLogin] = useState(true);
   const isMobile = useIsMobile();
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center overflow-hidden relative">
       {/* Title */}
       <div className="absolute z-10 top-32 md:top-32 left-4 md:left-8 text-3xl md:text-4xl lg:text-5xl font-serif font-bold">
         <span className="text-diary-purple">Ethereal</span>
-        <span className="text-diary-white">Diary</span>
+        <span className="text-white">Diary</span>
       </div>
 
-      <div className="absolute w-full max-w-4xl flex flex-col md:flex-row items-center px-4 md:px-6">
+      <div className="w-full max-w-6xl flex flex-col md:flex-row items-center px-4 md:px-6">
         <div
           className={`w-full md:w-1/2 transform transition-all duration-700 ${
             showAuth ? "opacity-0 -translate-x-20" : "opacity-100"
@@ -27,32 +33,28 @@ export const LandingHero = () => {
           <h1 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
             Your digital sanctuary
           </h1>
-          <p className="text-base md:text-lg text-gray-600 mb-6 md:mb-8 px-6 md:px-0">
+          <p className="text-base md:text-lg text-gray-300 mb-6 md:mb-8 px-6 md:px-0">
             Capture your thoughts, track your journey, and gain insights with AI-powered analysis.
           </p>
           <Button
             aria-label="Get Started"
             className="bg-diary-purple hover:bg-diary-purple/90 text-white px-6 py-4 md:px-8 md:py-6 text-base md:text-lg rounded-full transition-all duration-300"
-            onClick={() => setShowAuth(true)}
+            onClick={onScrollDown}
           >
             Get Started
           </Button>
         </div>
 
-        {/* Decorative Image */}
+        {/* 3D Book Animation */}
         <div className="w-full md:w-1/2 h-[350px] md:h-[500px] mt-8 md:mt-0 flex items-center justify-center">
-          <img 
-            src="/front-diary.jpg" 
-            alt="Diary Cover" 
-            className="h-auto max-h-full rounded-lg shadow-2xl transform transition-all duration-500 hover:scale-105"
-          />
+          <ThreeBook />
         </div>
       </div>
 
       {/* Auth Forms */}
       <div
         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${
-          showAuth ? "opacity-100" : "opacity-0 pointer-events-none"
+          showAuth ? "opacity-100 z-20" : "opacity-0 pointer-events-none -z-10"
         }`}
       >
         <div className="bg-white/90 backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-xl w-[90%] max-w-sm md:max-w-md animate-fade-in">
@@ -85,6 +87,18 @@ export const LandingHero = () => {
             Back to Home
           </Button>
         </div>
+      </div>
+
+      {/* Scroll Down Indicator */}
+      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="rounded-full bg-white/10 hover:bg-white/20"
+          onClick={onScrollDown}
+        >
+          <ChevronDown className="h-6 w-6" />
+        </Button>
       </div>
     </div>
   );

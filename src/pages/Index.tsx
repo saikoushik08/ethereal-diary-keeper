@@ -2,19 +2,30 @@
 import { Button } from "@/components/ui/button";
 import { Menu, ChevronRight } from "lucide-react";
 import LandingHero from "@/components/LandingHero";
-import { useEffect } from "react";
+import FeatureSection from "@/components/FeatureSection";
+import AboutSection from "@/components/AboutSection";
+import ContactSection from "@/components/ContactSection";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const aboutRef = useRef<HTMLDivElement>(null);
+  const contactRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       navigate("/dashboard");
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
+    ref.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div
@@ -36,16 +47,16 @@ const Index = () => {
             <span className="text-2xl font-bold text-diary-purple">Diary</span>
           </div>
           <nav className="hidden md:flex space-x-4">
-            <Button variant="ghost">Features</Button>
-            <Button variant="ghost">About</Button>
-            <Button variant="ghost">Contact</Button>
+            <Button variant="ghost" onClick={() => scrollToSection(featuresRef)}>Features</Button>
+            <Button variant="ghost" onClick={() => scrollToSection(aboutRef)}>About</Button>
+            <Button variant="ghost" onClick={() => scrollToSection(contactRef)}>Contact</Button>
           </nav>
           <div className="flex items-center space-x-2">
             <Button variant="outline" className="md:hidden">
               <Menu size={20} />
             </Button>
             <Button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => scrollToSection(heroRef)}
               className="bg-diary-purple text-white hover:bg-diary-purple/90 group"
             >
               Try It
@@ -58,9 +69,27 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Landing Hero with margin for fixed header */}
-      <div className="pt-20 h-screen">
-        <LandingHero />
+      {/* Main Content */}
+      <div className="pt-20">
+        {/* Hero Section */}
+        <div ref={heroRef} className="min-h-screen">
+          <LandingHero onScrollDown={() => scrollToSection(featuresRef)} />
+        </div>
+        
+        {/* Features Section */}
+        <div ref={featuresRef} className="min-h-screen py-20">
+          <FeatureSection />
+        </div>
+        
+        {/* About Section */}
+        <div ref={aboutRef} className="min-h-screen py-20">
+          <AboutSection />
+        </div>
+        
+        {/* Contact Section */}
+        <div ref={contactRef} className="min-h-screen py-20">
+          <ContactSection />
+        </div>
       </div>
     </div>
   );
