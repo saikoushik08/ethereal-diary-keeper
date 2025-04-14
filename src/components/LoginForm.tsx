@@ -49,7 +49,7 @@ export const LoginForm = () => {
           <span className="text-red-800">{error}</span>
         </div>
       )}
-      <div className="space-y-2">
+      <div className="space-y-2 text-black">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -60,7 +60,7 @@ export const LoginForm = () => {
           required
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 text-black">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
