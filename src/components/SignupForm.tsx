@@ -62,7 +62,7 @@ export const SignupForm = () => {
           <span className="text-red-800">{error}</span>
         </div>
       )}
-      <div className="space-y-2">
+      <div className="space-y-2 text-black">
         <Label htmlFor="username">Username</Label>
         <Input
           id="username"
@@ -72,7 +72,7 @@ export const SignupForm = () => {
           required
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 text-black">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -83,7 +83,7 @@ export const SignupForm = () => {
           required
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 text-black">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
@@ -94,7 +94,7 @@ export const SignupForm = () => {
           required
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 text-black">
         <Label htmlFor="confirmPassword">Confirm Password</Label>
         <Input
           id="confirmPassword"
