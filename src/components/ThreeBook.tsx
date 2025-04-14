@@ -19,8 +19,8 @@ function DiaryBook({ open, setOpen }: { open: boolean; setOpen: (open: boolean) 
 
   // Load front cover texture
   const frontTexture = useLoader(TextureLoader, "/front-diary.jpg");
-  // Load back cover texture - use the new uploaded image
-  const backTexture = useLoader(TextureLoader, "/lovable-uploads/adbf9303-bb7d-470f-bf33-a55f524dae04.png");
+  // Load back cover texture
+  const backTexture = useLoader(TextureLoader, "/back-diary1.jpg");
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -100,7 +100,7 @@ export const ThreeBook = () => {
           <h1 className="text-3xl md:text-4xl lg:text-6xl font-serif font-bold mb-4 md:mb-6">
             Your digital sanctuary
           </h1>
-          <p className="text-base md:text-lg text-gray-400 mb-6 md:mb-8 px-6 md:px-0">
+          <p className="text-base md:text-lg text-gray-600 mb-6 md:mb-8 px-6 md:px-0">
             Capture your thoughts, track your journey, and gain insights with AI-powered analysis.
           </p>
           <Button
