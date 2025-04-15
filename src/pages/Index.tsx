@@ -7,6 +7,8 @@ import AboutSection from "@/components/AboutSection";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { LoginForm } from "@/components/LoginForm";
+import { SignupForm } from "@/components/SignupForm";
 
 const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
