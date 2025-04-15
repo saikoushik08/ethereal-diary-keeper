@@ -1,17 +1,18 @@
 
 import { Button } from "@/components/ui/button";
-import { Menu, ChevronRight } from "lucide-react";
+import { Menu, ChevronRight, Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react";
 import LandingHero from "@/components/LandingHero";
 import FeatureSection from "@/components/FeatureSection";
 import AboutSection from "@/components/AboutSection";
-import ContactSection from "@/components/ContactSection";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [showAuth, setShowAuth] = useState(false);
+  const [showLogin, setShowLogin] = useState(true);
   const featuresRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const contactRef = useRef<HTMLDivElement>(null);
@@ -56,7 +57,7 @@ const Index = () => {
               <Menu size={20} />
             </Button>
             <Button
-              onClick={() => scrollToSection(heroRef)}
+              onClick={() => setShowAuth(true)}
               className="bg-diary-purple text-white hover:bg-diary-purple/90 group"
             >
               Try It
@@ -87,10 +88,92 @@ const Index = () => {
         </div>
         
         {/* Contact Section */}
-        <div ref={contactRef} className="min-h-screen py-20">
-          <ContactSection />
+        <div ref={contactRef} className="min-h-screen py-20 flex items-end">
+          <footer className="w-full bg-black/80 backdrop-blur-md py-12 px-4">
+            <div className="container mx-auto">
+              <h2 className="text-3xl font-serif font-bold mb-8 text-center">Contact Us</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div className="flex flex-col items-center">
+                  <div className="bg-diary-purple/20 p-4 rounded-full mb-4">
+                    <Mail className="h-8 w-8 text-diary-purple" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">Email</h3>
+                  <p className="text-gray-300">support@etherealdiary.com</p>
+                </div>
+                
+                <div className="flex flex-col items-center">
+                  <div className="bg-diary-purple/20 p-4 rounded-full mb-4">
+                    <Phone className="h-8 w-8 text-diary-purple" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">Phone</h3>
+                  <p className="text-gray-300">+1 (555) 123-4567</p>
+                </div>
+                
+                <div className="flex flex-col items-center">
+                  <div className="bg-diary-purple/20 p-4 rounded-full mb-4">
+                    <MapPin className="h-8 w-8 text-diary-purple" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">Address</h3>
+                  <p className="text-gray-300 text-center">123 Diary Lane, Suite 101<br />San Francisco, CA 94107</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-center space-x-6 mt-12">
+                <a href="#" className="bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors">
+                  <Facebook className="h-6 w-6" />
+                </a>
+                <a href="#" className="bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors">
+                  <Twitter className="h-6 w-6" />
+                </a>
+                <a href="#" className="bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors">
+                  <Instagram className="h-6 w-6" />
+                </a>
+              </div>
+              
+              <div className="text-center mt-12 text-gray-400 text-sm">
+                <p>&copy; {new Date().getFullYear()} Ethereal Diary. All rights reserved.</p>
+              </div>
+            </div>
+          </footer>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      {showAuth && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white/90 backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-xl w-[90%] max-w-sm md:max-w-md animate-fade-in">
+            <div className="flex justify-between mb-6 md:mb-8">
+              <button
+                className={`text-base md:text-lg font-medium pb-2 px-2 md:px-4 ${
+                  showLogin
+                    ? "text-diary-purple border-b-2 border-diary-purple"
+                    : "text-gray-400"
+                }`}
+                onClick={() => setShowLogin(true)}
+              >
+                Login
+              </button>
+              <button
+                className={`text-base md:text-lg font-medium pb-2 px-2 md:px-4 ${
+                  !showLogin
+                    ? "text-diary-purple border-b-2 border-diary-purple"
+                    : "text-gray-400"
+                }`}
+                onClick={() => setShowLogin(false)}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            {showLogin ? <LoginForm /> : <SignupForm />}
+
+            <Button variant="outline" className="mt-4 w-full text-black" onClick={() => setShowAuth(false)}>
+              Back to Home
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

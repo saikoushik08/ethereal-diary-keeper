@@ -4,7 +4,9 @@ import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2, XCircle, LineChart, PieChart, BarChart2, CalendarDays } from "lucide-react";
+import { CheckCircle2, XCircle, LineChart, PieChart, BarChart2, CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const Reports = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,11 +35,39 @@ const Reports = () => {
     notable: "Your creativity seems to flow better in the mornings based on the timing and content of your entries. Consider scheduling creative tasks earlier in the day.",
   };
 
+  // Mock weekly reports
+  const weeklyReports = [
+    { 
+      id: 1, 
+      dateRange: "April 8 - April 14, 2025", 
+      daysWithEntries: [9, 10, 12, 14],
+      summary: "A productive week with consistent journaling. Your mood trended positive, with peaks of happiness on Wednesday and Friday."
+    },
+    { 
+      id: 2, 
+      dateRange: "April 1 - April 7, 2025", 
+      daysWithEntries: [1, 3, 4, 5, 7],
+      summary: "You wrote consistently this week! Your entries showed a good balance between work and personal reflections."
+    },
+    { 
+      id: 3, 
+      dateRange: "March 25 - March 31, 2025", 
+      daysWithEntries: [25, 27, 31],
+      summary: "Less entries this week, but deeper reflections. Your writing showed more introspection and goal-setting."
+    },
+    { 
+      id: 4, 
+      dateRange: "March 18 - March 24, 2025", 
+      daysWithEntries: [20, 21, 24],
+      summary: "A week focused on creative endeavors. Your entries mentioned several new ideas and projects you're excited about."
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DiaryNav />
       
-      <div className="pl-64 pt-8 pr-8 pb-8">
+      <div className="pl-24 md:pl-24 lg:pl-64 pt-8 pr-4 md:pr-8 pb-8">
         <h1 className="text-3xl font-serif font-medium mb-2">AI Reports</h1>
         <p className="text-gray-500 mb-6">Insights and patterns from your diary entries</p>
         
@@ -53,7 +83,7 @@ const Reports = () => {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium">Week Overview</CardTitle>
-                  <CardDescription>April 1 - April 7, 2025</CardDescription>
+                  <CardDescription>April 8 - April 14, 2025</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -149,6 +179,46 @@ const Reports = () => {
                 <p className="pl-8">{weeklyAnalysis.notable}</p>
               </CardContent>
             </Card>
+            
+            <h2 className="text-2xl font-serif font-medium mb-4">Previous Weeks</h2>
+            <div className="space-y-4">
+              {weeklyReports.map((report) => (
+                <Collapsible key={report.id} className="bg-white rounded-lg shadow-sm border border-gray-100">
+                  <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                    <div className="text-left">
+                      <h3 className="text-lg font-medium">{report.dateRange}</h3>
+                      <p className="text-sm text-gray-500">{report.daysWithEntries.length} entries</p>
+                    </div>
+                    <ChevronDown className="h-5 w-5 text-gray-500 transition-transform ui-open:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="p-4 pt-0 border-t border-gray-100">
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2">Writing Days</h4>
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: 7 }).map((_, i) => {
+                          const day = i + (report.id === 1 ? 8 : (report.id === 2 ? 1 : (report.id === 3 ? 25 : 18)));
+                          const hasEntry = report.daysWithEntries.includes(day);
+                          return (
+                            <div
+                              key={i}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                hasEntry ? "bg-diary-purple text-white" : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {day}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Summary</h4>
+                      <p className="text-gray-600">{report.summary}</p>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
           </TabsContent>
           
           <TabsContent value="monthly">

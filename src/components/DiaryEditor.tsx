@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -14,8 +14,18 @@ import {
   Image as ImageIcon,
   CheckSquare,
   Tag,
+  Save,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+
+interface Todo {
+  text: string;
+  done: boolean;
+}
 
 interface Entry {
   id: string;
@@ -23,54 +33,85 @@ interface Entry {
   content: string;
   mood: string;
   tags: string[];
-  date: Date;
+  created_at?: string;
+  user_id?: string;
 }
 
-export const DiaryEditor = () => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [mood, setMood] = useState("neutral");
+interface DiaryEditorProps {
+  existingEntry: Entry | null;
+}
+
+export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [title, setTitle] = useState(existingEntry?.title || "");
+  const [content, setContent] = useState(existingEntry?.content || "");
+  const [mood, setMood] = useState(existingEntry?.mood || "neutral");
   const [tag, setTag] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [todos, setTodos] = useState<{ text: string; done: boolean }[]>([]);
+  const [tags, setTags] = useState<string[]>(existingEntry?.tags || []);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [todoText, setTodoText] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   // Auto-save effect
   useEffect(() => {
     const saveTimer = setTimeout(() => {
-      if (title || content) {
-        saveEntry();
+      if (title && content && !isSaving && !isDeleting) {
+        saveEntry(true);
       }
-    }, 5000);
+    }, 30000); // Auto-save every 30 seconds
 
     return () => clearTimeout(saveTimer);
   }, [title, content, mood, tags, todos]);
 
-  const saveEntry = () => {
-    if (!title) return;
+  // Function to insert text formatting at cursor position
+  const insertFormat = (format: string) => {
+    const textarea = document.querySelector(".diary-editor") as HTMLTextAreaElement;
+    if (!textarea) return;
 
-    const entry: Entry = {
-      id: Date.now().toString(),
-      title,
-      content,
-      mood,
-      tags,
-      date: new Date(),
-    };
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    let insertedText = "";
 
-    // In a real app, save to backend API
-    console.log("Saving entry:", entry);
+    switch (format) {
+      case "bold":
+        insertedText = `**${selectedText}**`;
+        break;
+      case "italic":
+        insertedText = `*${selectedText}*`;
+        break;
+      case "underline":
+        insertedText = `<u>${selectedText}</u>`;
+        break;
+      case "list":
+        insertedText = `\n- ${selectedText}`;
+        break;
+      case "ordered-list":
+        insertedText = `\n1. ${selectedText}`;
+        break;
+      case "image":
+        insertedText = `![${selectedText || "Image description"}](image-url)`;
+        break;
+      default:
+        insertedText = selectedText;
+    }
+
+    const newContent = 
+      textarea.value.substring(0, start) + 
+      insertedText + 
+      textarea.value.substring(end);
     
-    // For demo, save to localStorage
-    const entries = JSON.parse(localStorage.getItem("diaryEntries") || "[]");
-    entries.push(entry);
-    localStorage.setItem("diaryEntries", JSON.stringify(entries));
+    setContent(newContent);
     
-    toast({
-      title: "Entry saved",
-      description: "Your diary entry has been automatically saved.",
-    });
+    // Set focus back to textarea
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = start + insertedText.length;
+      textarea.selectionEnd = start + insertedText.length;
+    }, 0);
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
@@ -99,10 +140,121 @@ export const DiaryEditor = () => {
     setTags(tags.filter(t => t !== tagToRemove));
   };
 
-  const insertFormat = (format: string) => {
-    // In a real implementation, we would use a proper rich text editor library
-    // This is just a simple demonstration
-    setContent(content + ` [${format}] `);
+  const saveEntry = async (isAutoSave = false) => {
+    if (!title) {
+      toast({
+        title: "Title required",
+        description: "Please add a title for your entry.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Authentication error",
+        description: "You need to be logged in to save entries.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      const entryData = {
+        title,
+        content,
+        mood,
+        tags,
+        todos: todos.length > 0 ? todos : null,
+        user_id: user.id,
+      };
+
+      let result;
+
+      if (existingEntry) {
+        // Update existing entry
+        const { data, error } = await supabase
+          .from('entries')
+          .update(entryData)
+          .eq('id', existingEntry.id)
+          .select();
+
+        if (error) throw error;
+        result = data[0];
+      } else {
+        // Create new entry
+        const { data, error } = await supabase
+          .from('entries')
+          .insert(entryData)
+          .select();
+
+        if (error) throw error;
+        result = data[0];
+      }
+
+      if (!isAutoSave) {
+        toast({
+          title: existingEntry ? "Entry updated" : "Entry saved",
+          description: existingEntry 
+            ? "Your diary entry has been updated." 
+            : "Your diary entry has been saved.",
+        });
+
+        if (!existingEntry) {
+          navigate(`/diary/${result.id}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving entry:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save your entry. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deleteEntry = async () => {
+    if (!existingEntry) return;
+    
+    if (!confirm("Are you sure you want to delete this entry? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      
+      const { error } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', existingEntry.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Entry deleted",
+        description: "Your diary entry has been deleted.",
+      });
+
+      navigate('/diary');
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete your entry. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleContentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
   };
 
   const moodOptions = [
@@ -128,7 +280,7 @@ export const DiaryEditor = () => {
       </div>
 
       <div className="mb-6">
-        <div className="diary-toolbar">
+        <div className="diary-toolbar flex flex-wrap gap-1 mb-2 bg-gray-50 p-2 rounded">
           <Button
             variant="ghost"
             size="sm"
@@ -182,8 +334,8 @@ export const DiaryEditor = () => {
         <textarea
           placeholder="Start writing your thoughts here..."
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="diary-editor w-full focus:outline-none min-h-[300px]"
+          onChange={handleContentChange}
+          className="diary-editor w-full focus:outline-none min-h-[300px] p-3 border rounded-md"
         />
       </div>
 
@@ -194,7 +346,7 @@ export const DiaryEditor = () => {
           <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="mood" className="p-4 bg-white rounded-md shadow-sm mt-2">
+        <TabsContent value="mood" className="p-4 bg-white rounded-md shadow-sm mt-2 border">
           <div className="text-lg mb-3">How are you feeling today?</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {moodOptions.map((option) => (
@@ -211,7 +363,7 @@ export const DiaryEditor = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="todos" className="p-4 bg-white rounded-md shadow-sm mt-2">
+        <TabsContent value="todos" className="p-4 bg-white rounded-md shadow-sm mt-2 border">
           <form onSubmit={handleAddTodo} className="mb-4 flex">
             <Input
               placeholder="Add a task..."
@@ -251,7 +403,7 @@ export const DiaryEditor = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="tags" className="p-4 bg-white rounded-md shadow-sm mt-2">
+        <TabsContent value="tags" className="p-4 bg-white rounded-md shadow-sm mt-2 border">
           <form onSubmit={handleAddTag} className="mb-4 flex">
             <Input
               placeholder="Add a tag..."
@@ -284,26 +436,38 @@ export const DiaryEditor = () => {
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-end mt-6">
-        <Button
-          variant="outline"
-          className="mr-2"
-          onClick={() => {
-            setTitle("");
-            setContent("");
-            setMood("neutral");
-            setTags([]);
-            setTodos([]);
-          }}
-        >
-          Discard
-        </Button>
-        <Button
-          onClick={saveEntry}
-          className="bg-diary-purple hover:bg-diary-purple/90"
-        >
-          Save Entry
-        </Button>
+      <div className="flex justify-between mt-6">
+        <div>
+          {existingEntry && (
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={deleteEntry}
+              disabled={isDeleting || isSaving}
+            >
+              <Trash2 size={18} className="mr-2" />
+              Delete
+            </Button>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/diary')}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => saveEntry()}
+            className="bg-diary-purple hover:bg-diary-purple/90"
+            disabled={isSaving}
+          >
+            <Save size={18} className="mr-2" />
+            {isSaving ? 'Saving...' : 'Save Entry'}
+          </Button>
+        </div>
       </div>
     </div>
   );

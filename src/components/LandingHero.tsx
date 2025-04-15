@@ -45,8 +45,7 @@ export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
             </Button>
             <Button
               aria-label="Get Started"
-              variant="outline"
-              className="border-white text-white hover:bg-white/10 px-6 py-4 md:px-8 md:py-6 text-base md:text-lg rounded-full transition-all duration-300"
+              className="bg-diary-purple hover:bg-diary-purple/90 text-white px-6 py-4 md:px-8 md:py-6 text-base md:text-lg rounded-full transition-all duration-300"
               onClick={onScrollDown}
             >
               Get Started

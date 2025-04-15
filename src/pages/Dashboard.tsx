@@ -1,16 +1,18 @@
 
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, BookText, BarChart, Calendar } from "lucide-react";
+import { PlusCircle, BookText, BarChart, Calendar, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
 
 const Dashboard = () => {
   const { user, profile, isAuthenticated, isLoading } = useAuth();
   const isMobile = useIsMobile();
+  const [showProfile, setShowProfile] = useState(false);
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
@@ -57,11 +59,11 @@ const Dashboard = () => {
       <DiaryNav />
       
       <div className={contentClass}>
-        <header className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-serif font-medium">
+        <header className="mb-10 md:mb-12 text-center">
+          <h1 className="text-3xl md:text-4xl font-serif font-medium">
             Hello, <span className="text-diary-purple">{profile?.username || "there"}</span>
           </h1>
-          <p className="text-sm md:text-base text-gray-500">
+          <p className="text-base md:text-lg text-gray-500 mt-2">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
@@ -71,13 +73,14 @@ const Dashboard = () => {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow w-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Link to="/diary">
                   <Button className="w-full justify-start bg-diary-purple hover:bg-diary-purple/90">
                     <PlusCircle size={18} className="mr-2" />
@@ -100,79 +103,121 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Recent Entries</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentEntries.length > 0 ? (
-                <div className="space-y-2">
-                  {recentEntries.map((entry) => (
-                    <Link 
-                      key={entry.id}
-                      to={`/diary/${entry.id}`}
-                      className="block p-3 rounded-md hover:bg-gray-50 border border-gray-100"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-medium text-sm md:text-base truncate max-w-[160px] md:max-w-[200px]">{entry.title}</div>
-                          <div className="text-xs md:text-sm text-gray-500">{entry.date}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Recent Entries */}
+            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">Recent Entries</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentEntries.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentEntries.map((entry) => (
+                      <Link 
+                        key={entry.id}
+                        to={`/diary/${entry.id}`}
+                        className="block p-3 rounded-md hover:bg-gray-50 border border-gray-100"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium text-sm md:text-base truncate max-w-[160px] md:max-w-[200px]">{entry.title}</div>
+                            <div className="text-xs md:text-sm text-gray-500">{entry.date}</div>
+                          </div>
+                          <div className="text-xl">{getMoodEmoji(entry.mood)}</div>
                         </div>
-                        <div className="text-xl">{getMoodEmoji(entry.mood)}</div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <BookText size={48} className="mx-auto mb-2 opacity-30" />
+                    <p>No entries yet. Start writing!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* This Month */}
+            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">This Month</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <div className="text-2xl md:text-3xl font-bold">{recentEntries.length}</div>
+                    <div className="text-xs md:text-sm text-gray-500">Entries</div>
+                  </div>
+                  <Calendar size={36} className="text-diary-purple opacity-80" />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="text-xs md:text-sm font-medium mb-1">Mood Distribution</div>
+                  {moodData.map((item) => (
+                    <div key={item.mood} className="flex items-center">
+                      <div 
+                        className="w-2 md:w-3 h-2 md:h-3 rounded-full mr-2"
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                      <div className="text-xs md:text-sm flex-1">{item.mood}</div>
+                      <div 
+                        className="h-1.5 md:h-2 bg-gray-100 flex-grow mx-2 rounded-full overflow-hidden"
+                      >
+                        <div 
+                          className="h-full rounded-full"
+                          style={{ 
+                            width: `${(item.count / moodData.reduce((acc, curr) => acc + curr.count, 0)) * 100}%`,
+                            backgroundColor: item.color
+                          }}
+                        ></div>
                       </div>
-                    </Link>
+                      <div className="text-xs md:text-sm text-gray-500 w-6 md:w-8 text-right">{item.count}</div>
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <BookText size={48} className="mx-auto mb-2 opacity-30" />
-                  <p>No entries yet. Start writing!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">This Month</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <div className="text-2xl md:text-3xl font-bold">{recentEntries.length}</div>
-                  <div className="text-xs md:text-sm text-gray-500">Entries</div>
-                </div>
-                <Calendar size={36} className="text-diary-purple opacity-80" />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="text-xs md:text-sm font-medium mb-1">Mood Distribution</div>
-                {moodData.map((item) => (
-                  <div key={item.mood} className="flex items-center">
-                    <div 
-                      className="w-2 md:w-3 h-2 md:h-3 rounded-full mr-2"
-                      style={{ backgroundColor: item.color }}
-                    ></div>
-                    <div className="text-xs md:text-sm flex-1">{item.mood}</div>
-                    <div 
-                      className="h-1.5 md:h-2 bg-gray-100 flex-grow mx-2 rounded-full overflow-hidden"
-                    >
-                      <div 
-                        className="h-full rounded-full"
-                        style={{ 
-                          width: `${(item.count / moodData.reduce((acc, curr) => acc + curr.count, 0)) * 100}%`,
-                          backgroundColor: item.color
-                        }}
-                      ></div>
-                    </div>
-                    <div className="text-xs md:text-sm text-gray-500 w-6 md:w-8 text-right">{item.count}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
+
+      {/* Profile Button */}
+      <Button 
+        className="fixed top-4 right-4 md:right-6 z-40 bg-white text-diary-purple hover:bg-white/90 rounded-full w-10 h-10 p-0"
+        onClick={() => setShowProfile(true)}
+      >
+        <User size={20} />
+      </Button>
+
+      {/* Profile Overlay */}
+      {showProfile && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setShowProfile(false)}>
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Profile</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowProfile(false)}>
+                <X size={18} />
+              </Button>
+            </div>
+            <div className="flex flex-col items-center mb-6">
+              <Avatar className="w-24 h-24 mb-4">
+                <AvatarImage src={profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.username || "User"}`} alt={profile?.username} />
+                <AvatarFallback>{profile?.username?.substring(0, 2).toUpperCase() || "U"}</AvatarFallback>
+              </Avatar>
+              <h3 className="text-xl font-medium">{profile?.username || "User"}</h3>
+              <p className="text-gray-500">{user?.email}</p>
+            </div>
+            <div className="space-y-2">
+              <Link to="/profile">
+                <Button className="w-full">View Full Profile</Button>
+              </Link>
+              <Link to="/settings">
+                <Button variant="outline" className="w-full">Settings</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

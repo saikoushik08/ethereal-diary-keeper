@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DiaryEntry from "./pages/DiaryEntry";
+import DiaryList from "./pages/DiaryList";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
@@ -25,7 +26,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/diary" element={<DiaryEntry />} />
+            <Route path="/diary" element={<DiaryList />} />
+            <Route path="/diary/new" element={<DiaryEntry />} />
+            <Route path="/diary/:id" element={<DiaryEntry />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />
