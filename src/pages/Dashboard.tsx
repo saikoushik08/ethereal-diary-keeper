@@ -60,10 +60,10 @@ const Dashboard = () => {
       
       <div className={contentClass}>
         <header className="mb-10 md:mb-12 text-center">
-          <h1 className="text-3xl md:text-4xl font-serif font-medium">
+          <h1 className="text-4xl md:text-5xl font-serif font-medium">
             Hello, <span className="text-diary-purple">{profile?.username || "there"}</span>
           </h1>
-          <p className="text-base md:text-lg text-gray-500 mt-2">
+          <p className="text-xl md:text-2xl text-gray-500 mt-4">
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
@@ -74,14 +74,14 @@ const Dashboard = () => {
         </header>
 
         <div className="space-y-6">
-          {/* Quick Actions */}
+          {/* Quick Actions (full width) */}
           <Card className="bg-white shadow-sm hover:shadow-md transition-shadow w-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-2">
-                <Link to="/diary">
+                <Link to="/diary/new">
                   <Button className="w-full justify-start bg-diary-purple hover:bg-diary-purple/90">
                     <PlusCircle size={18} className="mr-2" />
                     New Entry
@@ -103,81 +103,79 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Recent Entries */}
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Recent Entries</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentEntries.length > 0 ? (
-                  <div className="space-y-2">
-                    {recentEntries.map((entry) => (
-                      <Link 
-                        key={entry.id}
-                        to={`/diary/${entry.id}`}
-                        className="block p-3 rounded-md hover:bg-gray-50 border border-gray-100"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-medium text-sm md:text-base truncate max-w-[160px] md:max-w-[200px]">{entry.title}</div>
-                            <div className="text-xs md:text-sm text-gray-500">{entry.date}</div>
-                          </div>
-                          <div className="text-xl">{getMoodEmoji(entry.mood)}</div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-gray-500">
-                    <BookText size={48} className="mx-auto mb-2 opacity-30" />
-                    <p>No entries yet. Start writing!</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* This Month */}
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">This Month</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <div className="text-2xl md:text-3xl font-bold">{recentEntries.length}</div>
-                    <div className="text-xs md:text-sm text-gray-500">Entries</div>
-                  </div>
-                  <Calendar size={36} className="text-diary-purple opacity-80" />
-                </div>
-                
+          {/* Recent Entries (full width) */}
+          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow w-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium">Recent Entries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentEntries.length > 0 ? (
                 <div className="space-y-2">
-                  <div className="text-xs md:text-sm font-medium mb-1">Mood Distribution</div>
-                  {moodData.map((item) => (
-                    <div key={item.mood} className="flex items-center">
-                      <div 
-                        className="w-2 md:w-3 h-2 md:h-3 rounded-full mr-2"
-                        style={{ backgroundColor: item.color }}
-                      ></div>
-                      <div className="text-xs md:text-sm flex-1">{item.mood}</div>
-                      <div 
-                        className="h-1.5 md:h-2 bg-gray-100 flex-grow mx-2 rounded-full overflow-hidden"
-                      >
-                        <div 
-                          className="h-full rounded-full"
-                          style={{ 
-                            width: `${(item.count / moodData.reduce((acc, curr) => acc + curr.count, 0)) * 100}%`,
-                            backgroundColor: item.color
-                          }}
-                        ></div>
+                  {recentEntries.map((entry) => (
+                    <Link 
+                      key={entry.id}
+                      to={`/diary/${entry.id}`}
+                      className="block p-3 rounded-md hover:bg-gray-50 border border-gray-100"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium text-sm md:text-base truncate max-w-[160px] md:max-w-[200px]">{entry.title}</div>
+                          <div className="text-xs md:text-sm text-gray-500">{entry.date}</div>
+                        </div>
+                        <div className="text-xl">{getMoodEmoji(entry.mood)}</div>
                       </div>
-                      <div className="text-xs md:text-sm text-gray-500 w-6 md:w-8 text-right">{item.count}</div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500">
+                  <BookText size={48} className="mx-auto mb-2 opacity-30" />
+                  <p>No entries yet. Start writing!</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* This Month (full width) */}
+          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow w-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium">This Month</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold">{recentEntries.length}</div>
+                  <div className="text-xs md:text-sm text-gray-500">Entries</div>
+                </div>
+                <Calendar size={36} className="text-diary-purple opacity-80" />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="text-xs md:text-sm font-medium mb-1">Mood Distribution</div>
+                {moodData.map((item) => (
+                  <div key={item.mood} className="flex items-center">
+                    <div 
+                      className="w-2 md:w-3 h-2 md:h-3 rounded-full mr-2"
+                      style={{ backgroundColor: item.color }}
+                    ></div>
+                    <div className="text-xs md:text-sm flex-1">{item.mood}</div>
+                    <div 
+                      className="h-1.5 md:h-2 bg-gray-100 flex-grow mx-2 rounded-full overflow-hidden"
+                    >
+                      <div 
+                        className="h-full rounded-full"
+                        style={{ 
+                          width: `${(item.count / moodData.reduce((acc, curr) => acc + curr.count, 0)) * 100}%`,
+                          backgroundColor: item.color
+                        }}
+                      ></div>
+                    </div>
+                    <div className="text-xs md:text-sm text-gray-500 w-6 md:w-8 text-right">{item.count}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

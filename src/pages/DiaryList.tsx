@@ -50,7 +50,7 @@ const DiaryList = () => {
             throw error;
           }
 
-          setEntries(data || []);
+          setEntries(data as Entry[] || []);
         } catch (error) {
           console.error("Error fetching entries:", error);
           toast({

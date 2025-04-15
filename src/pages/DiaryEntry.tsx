@@ -50,7 +50,7 @@ const DiaryEntry = () => {
           }
 
           if (data) {
-            setEntry(data);
+            setEntry(data as Entry);
           } else {
             toast({
               title: "Entry not found",

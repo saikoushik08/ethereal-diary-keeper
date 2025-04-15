@@ -89,7 +89,7 @@ const Index = () => {
           <AboutSection />
         </div>
         
-        {/* Contact Section */}
+        {/* Contact Section with Black Footer */}
         <div ref={contactRef} className="min-h-screen py-20 flex items-end">
           <footer className="w-full bg-black/80 backdrop-blur-md py-12 px-4">
             <div className="container mx-auto">

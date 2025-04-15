@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
@@ -58,7 +57,6 @@ const Settings = () => {
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
-  // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/" />;
   }
@@ -71,8 +69,10 @@ const Settings = () => {
     try {
       setSaving(true);
       
-      // Here, you would save settings to Supabase
-      // For demo, we'll just show a success toast
+      localStorage.setItem('diary_settings', JSON.stringify({
+        ...settings,
+        lastUpdated: new Date().toISOString()
+      }));
       
       toast({
         title: "Settings saved",
@@ -94,18 +94,22 @@ const Settings = () => {
     try {
       setSaving(true);
       
-      // Apply theme changes
       if (settings.theme === "dark") {
         document.documentElement.classList.add("dark");
       } else {
         document.documentElement.classList.remove("dark");
       }
       
-      // Apply font size changes
       document.documentElement.style.fontSize = 
         settings.fontSize === "small" ? "14px" : 
         settings.fontSize === "large" ? "18px" : 
         "16px";
+      
+      localStorage.setItem('diary_appearance', JSON.stringify({
+        theme: settings.theme,
+        fontSize: settings.fontSize,
+        lastUpdated: new Date().toISOString()
+      }));
       
       toast({
         title: "Appearance updated",
@@ -177,7 +181,6 @@ const Settings = () => {
       
       if (!user) throw new Error("User not authenticated");
       
-      // Delete all entries for this user
       const { error } = await supabase
         .from('entries')
         .delete()
@@ -218,17 +221,18 @@ const Settings = () => {
       
       if (!user) throw new Error("User not authenticated");
       
-      // Delete user account
-      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      const { error: entriesError } = await supabase
+        .from('entries')
+        .delete()
+        .eq('user_id', user.id);
       
-      if (error) throw error;
+      if (entriesError) throw entriesError;
       
-      // Log the user out
       await logout();
       
       toast({
         title: "Account deleted",
-        description: "Your account has been permanently deleted.",
+        description: "Your account has been deleted and you've been logged out.",
       });
     } catch (error) {
       console.error("Error deleting account:", error);
@@ -587,21 +591,17 @@ const Settings = () => {
         </Tabs>
       </div>
 
-      {/* Delete Entries Dialog */}
       <Dialog open={showDeleteEntries} onOpenChange={setShowDeleteEntries}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle size={18} />
+            <DialogTitle className="flex items-center text-red-600">
+              <AlertTriangle className="mr-2" size={20} />
               Delete All Entries
             </DialogTitle>
             <DialogDescription>
-              This action cannot be undone. All your diary entries will be permanently deleted.
+              This will permanently delete all your diary entries. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <p className="mb-4">Are you sure you want to delete all your diary entries?</p>
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteEntries(false)}>
               Cancel
@@ -611,32 +611,36 @@ const Settings = () => {
               onClick={deleteAllEntries}
               disabled={saving}
             >
-              {saving ? "Deleting..." : "Delete All"}
+              {saving ? "Deleting..." : "Delete All Entries"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Account Dialog */}
       <Dialog open={showDeleteAccount} onOpenChange={setShowDeleteAccount}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle size={18} />
+            <DialogTitle className="flex items-center text-red-600">
+              <AlertTriangle className="mr-2" size={20} />
               Delete Account
             </DialogTitle>
             <DialogDescription>
-              This action cannot be undone. Your account and all associated data will be permanently deleted.
+              This will permanently delete your account and all data. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <p className="mb-4">To confirm deletion, please type "DELETE" below:</p>
-            <Input
-              placeholder="Type DELETE to confirm"
+          
+          <div className="mt-4">
+            <Label htmlFor="confirm-delete">
+              Type <span className="font-bold">DELETE</span> to confirm
+            </Label>
+            <Input 
+              id="confirm-delete"
+              className="mt-1"
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
             />
           </div>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteAccount(false)}>
               Cancel

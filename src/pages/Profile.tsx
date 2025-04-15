@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -24,7 +24,7 @@ const Profile = () => {
   const { toast } = useToast();
 
   // File input reference
-  const fileInputRef = useState<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
@@ -396,7 +396,7 @@ const Profile = () => {
               </Button>
               <input 
                 type="file"
-                ref={(input) => fileInputRef.current = input}
+                ref={fileInputRef}
                 className="hidden"
                 accept="image/*"
                 onChange={handleFileChange}

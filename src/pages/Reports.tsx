@@ -4,17 +4,116 @@ import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2, XCircle, LineChart, PieChart, BarChart2, CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, XCircle, LineChart, PieChart, BarChart2, CalendarDays, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { supabase } from "@/integrations/supabase/client";
+import { format, startOfWeek, endOfWeek, subWeeks, eachDayOfInterval } from "date-fns";
+
+interface WeeklyReport {
+  id: number;
+  dateRange: string;
+  startDate: Date;
+  endDate: Date;
+  daysWithEntries: number[];
+  summary: string;
+}
 
 const Reports = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [weeklyReports, setWeeklyReports] = useState<WeeklyReport[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/" />;
   }
+
+  // Generate weekly reports based on entries
+  useEffect(() => {
+    const generateWeeklyReports = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch entries from the last 4 weeks
+        const { data: entries, error } = await supabase
+          .from('entries')
+          .select('id, created_at, mood')
+          .eq('user_id', user.id)
+          .gte('created_at', subWeeks(new Date(), 4).toISOString())
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        // Generate weekly reports
+        const reports: WeeklyReport[] = [];
+        
+        for (let i = 0; i < 4; i++) {
+          const endDate = i === 0 ? new Date() : subWeeks(new Date(), i);
+          const startDate = startOfWeek(endDate);
+          
+          // Create date range string
+          const dateRange = `${format(startDate, 'MMMM d')} - ${format(endDate, 'MMMM d, yyyy')}`;
+          
+          // Find entries in this week
+          const entriesThisWeek = entries?.filter(entry => {
+            const entryDate = new Date(entry.created_at);
+            return entryDate >= startDate && entryDate <= endDate;
+          }) || [];
+          
+          // Get days with entries
+          const daysWithEntries = entriesThisWeek.map(entry => {
+            return new Date(entry.created_at).getDate();
+          });
+          
+          // Create report summary
+          let summary = "No entries this week.";
+          
+          if (entriesThisWeek.length > 0) {
+            // Count moods
+            const moodCounts: Record<string, number> = {};
+            entriesThisWeek.forEach(entry => {
+              moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+            });
+            
+            // Find dominant mood
+            let dominantMood = "";
+            let maxCount = 0;
+            
+            for (const mood in moodCounts) {
+              if (moodCounts[mood] > maxCount) {
+                maxCount = moodCounts[mood];
+                dominantMood = mood;
+              }
+            }
+            
+            summary = `You wrote ${entriesThisWeek.length} ${entriesThisWeek.length === 1 ? 'entry' : 'entries'} this week. Your dominant mood was ${dominantMood}.`;
+          }
+          
+          reports.push({
+            id: i + 1,
+            dateRange,
+            startDate,
+            endDate,
+            daysWithEntries,
+            summary
+          });
+        }
+        
+        setWeeklyReports(reports);
+      } catch (error) {
+        console.error("Error generating reports:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user) {
+      generateWeeklyReports();
+    }
+  }, [user]);
 
   // Mock data for demo purposes
   const weekSummary = {
@@ -34,34 +133,6 @@ const Reports = () => {
     goalProgress: "You're making steady progress on your writing goals, with 3 out of 5 planned sessions completed this week. Your meditation practice has been consistent with 6 out of 7 days logged.",
     notable: "Your creativity seems to flow better in the mornings based on the timing and content of your entries. Consider scheduling creative tasks earlier in the day.",
   };
-
-  // Mock weekly reports
-  const weeklyReports = [
-    { 
-      id: 1, 
-      dateRange: "April 8 - April 14, 2025", 
-      daysWithEntries: [9, 10, 12, 14],
-      summary: "A productive week with consistent journaling. Your mood trended positive, with peaks of happiness on Wednesday and Friday."
-    },
-    { 
-      id: 2, 
-      dateRange: "April 1 - April 7, 2025", 
-      daysWithEntries: [1, 3, 4, 5, 7],
-      summary: "You wrote consistently this week! Your entries showed a good balance between work and personal reflections."
-    },
-    { 
-      id: 3, 
-      dateRange: "March 25 - March 31, 2025", 
-      daysWithEntries: [25, 27, 31],
-      summary: "Less entries this week, but deeper reflections. Your writing showed more introspection and goal-setting."
-    },
-    { 
-      id: 4, 
-      dateRange: "March 18 - March 24, 2025", 
-      daysWithEntries: [20, 21, 24],
-      summary: "A week focused on creative endeavors. Your entries mentioned several new ideas and projects you're excited about."
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -83,7 +154,7 @@ const Reports = () => {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium">Week Overview</CardTitle>
-                  <CardDescription>April 8 - April 14, 2025</CardDescription>
+                  <CardDescription>{weeklyReports[0]?.dateRange || "This Week"}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -182,42 +253,55 @@ const Reports = () => {
             
             <h2 className="text-2xl font-serif font-medium mb-4">Previous Weeks</h2>
             <div className="space-y-4">
-              {weeklyReports.map((report) => (
-                <Collapsible key={report.id} className="bg-white rounded-lg shadow-sm border border-gray-100">
-                  <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
-                    <div className="text-left">
-                      <h3 className="text-lg font-medium">{report.dateRange}</h3>
-                      <p className="text-sm text-gray-500">{report.daysWithEntries.length} entries</p>
+              {loading ? (
+                <>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-white rounded-lg shadow-sm animate-pulse p-4">
+                      <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
                     </div>
-                    <ChevronDown className="h-5 w-5 text-gray-500 transition-transform ui-open:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="p-4 pt-0 border-t border-gray-100">
-                    <div className="mb-4">
-                      <h4 className="font-medium mb-2">Writing Days</h4>
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: 7 }).map((_, i) => {
-                          const day = i + (report.id === 1 ? 8 : (report.id === 2 ? 1 : (report.id === 3 ? 25 : 18)));
-                          const hasEntry = report.daysWithEntries.includes(day);
-                          return (
-                            <div
-                              key={i}
-                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
-                                hasEntry ? "bg-diary-purple text-white" : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              {day}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Summary</h4>
-                      <p className="text-gray-600">{report.summary}</p>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
+                  ))}
+                </>
+              ) : (
+                <>
+                  {weeklyReports.map((report) => (
+                    <Collapsible key={report.id} className="bg-white rounded-lg shadow-sm border border-gray-100">
+                      <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
+                        <div className="text-left">
+                          <h3 className="text-lg font-medium">{report.dateRange}</h3>
+                          <p className="text-sm text-gray-500">{report.daysWithEntries.length} entries</p>
+                        </div>
+                        <ChevronDown className="h-5 w-5 text-gray-500 transition-transform ui-open:rotate-180" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="p-4 pt-0 border-t border-gray-100">
+                        <div className="mb-4">
+                          <h4 className="font-medium mb-2">Writing Days</h4>
+                          <div className="flex items-center space-x-1">
+                            {eachDayOfInterval({ start: report.startDate, end: report.endDate }).map((day, i) => {
+                              const dayOfMonth = day.getDate();
+                              const hasEntry = report.daysWithEntries.includes(dayOfMonth);
+                              return (
+                                <div
+                                  key={i}
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                                    hasEntry ? "bg-diary-purple text-white" : "bg-gray-100 text-gray-500"
+                                  }`}
+                                >
+                                  {dayOfMonth}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-2">Summary</h4>
+                          <p className="text-gray-600">{report.summary}</p>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </>
+              )}
             </div>
           </TabsContent>
           

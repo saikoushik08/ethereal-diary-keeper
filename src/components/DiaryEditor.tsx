@@ -33,6 +33,7 @@ interface Entry {
   content: string;
   mood: string;
   tags: string[];
+  todos?: Todo[];
   created_at?: string;
   user_id?: string;
 }
@@ -49,7 +50,7 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
   const [mood, setMood] = useState(existingEntry?.mood || "neutral");
   const [tag, setTag] = useState("");
   const [tags, setTags] = useState<string[]>(existingEntry?.tags || []);
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todos, setTodos] = useState<Todo[]>(existingEntry?.todos || []);
   const [todoText, setTodoText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
