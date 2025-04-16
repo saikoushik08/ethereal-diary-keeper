@@ -5,6 +5,7 @@ if (typeof window !== 'undefined') {
   window.global = window;
   
   // For older versions of draft-js that might use process.env
-  window.process = window.process || {};
+  // Using type assertion to avoid TypeScript errors
+  window.process = window.process || {} as any;
   window.process.env = window.process.env || {};
 }
