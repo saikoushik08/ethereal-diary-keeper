@@ -14,9 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
-  const { user, profile, isAuthenticated, isLoading } = useAuth();
+  const { user, profile, isAuthenticated, isLoading, updateUserProfile } = useAuth();
   const [username, setUsername] = useState(profile?.username || "");
-  const [bio, setBio] = useState("");
+  const [bio, setBio] = useState(profile?.bio || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,6 +34,7 @@ const Profile = () => {
   useEffect(() => {
     if (profile) {
       setUsername(profile.username || "");
+      setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url || null);
     }
   }, [profile]);
@@ -54,10 +55,12 @@ const Profile = () => {
 
       if (!user) throw new Error("User not authenticated");
 
-      // Upload file to storage
+      // Create a unique filename
       const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
       
+      // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
@@ -68,6 +71,8 @@ const Profile = () => {
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
+
+      console.log("Avatar uploaded successfully, URL:", data.publicUrl);
 
       // Update profile with new avatar URL
       const { error: updateError } = await supabase

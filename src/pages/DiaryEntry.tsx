@@ -81,7 +81,7 @@ const DiaryEntry = () => {
     : "pl-24 md:pl-24 lg:pl-64 pt-8 pr-4 md:pr-8 pb-8";
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <DiaryNav />
       
       <div className={contentClass}>
@@ -89,14 +89,14 @@ const DiaryEntry = () => {
           <>
             <div className="flex items-center mb-4 md:mb-6">
               <Link to="/diary">
-                <Button variant="ghost" size="icon" className="mr-2">
+                <Button variant="ghost" size="icon" className="mr-2 dark:text-white">
                   <ArrowLeft size={20} />
                 </Button>
               </Link>
-              <h1 className="text-2xl md:text-3xl font-serif font-medium">New Entry</h1>
+              <h1 className="text-2xl md:text-3xl font-serif font-medium dark:text-white">New Entry</h1>
             </div>
             
-            <div className="bg-white p-3 md:p-6 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow-sm dark:border dark:border-gray-700">
               <DiaryEditor existingEntry={null} />
             </div>
           </>
@@ -104,24 +104,24 @@ const DiaryEntry = () => {
           <>
             <div className="flex items-center mb-4 md:mb-6">
               <Link to="/diary">
-                <Button variant="ghost" size="icon" className="mr-2">
+                <Button variant="ghost" size="icon" className="mr-2 dark:text-white">
                   <ArrowLeft size={20} />
                 </Button>
               </Link>
-              <h1 className="text-2xl md:text-3xl font-serif font-medium">
+              <h1 className="text-2xl md:text-3xl font-serif font-medium dark:text-white">
                 {entry?.title || "Loading entry..."}
               </h1>
             </div>
             
-            <div className="bg-white p-3 md:p-6 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow-sm dark:border dark:border-gray-700">
               {entry ? (
                 <DiaryEditor existingEntry={entry} />
               ) : (
                 <div className="text-center py-12">
-                  <div className="animate-pulse bg-gray-200 h-8 w-3/4 mx-auto mb-4 rounded"></div>
-                  <div className="animate-pulse bg-gray-200 h-4 w-full mx-auto mb-2 rounded"></div>
-                  <div className="animate-pulse bg-gray-200 h-4 w-full mx-auto mb-2 rounded"></div>
-                  <div className="animate-pulse bg-gray-200 h-4 w-2/3 mx-auto rounded"></div>
+                  <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-3/4 mx-auto mb-4 rounded"></div>
+                  <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full mx-auto mb-2 rounded"></div>
+                  <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full mx-auto mb-2 rounded"></div>
+                  <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-2/3 mx-auto rounded"></div>
                 </div>
               )}
             </div>

@@ -75,12 +75,43 @@
   }
 
   body {
-    @apply bg-white text-foreground font-sans;
+    @apply bg-background text-foreground font-sans;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-medium;
   }
+}
+
+/* Dark mode specific styles */
+.dark .bg-white {
+  @apply bg-gray-900;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+.dark .text-gray-600, 
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+.dark .border-gray-200, 
+.dark .border-gray-300 {
+  @apply border-gray-700;
+}
+
+.dark .bg-diary-lavender {
+  @apply bg-purple-900/30;
+}
+
+.dark .bg-diary-blue {
+  @apply bg-blue-900/30;
+}
+
+.dark .bg-green-100 {
+  @apply bg-green-900/30;
 }
 
 /* Book 3D effect styles */
@@ -121,7 +152,7 @@
 
 /* Editor styles */
 .diary-editor {
-  @apply bg-white rounded-lg p-6 shadow-md;
+  @apply bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md dark:text-white;
   min-height: 300px;
 }
 
@@ -130,9 +161,9 @@
 }
 
 .diary-toolbar {
-  @apply flex flex-wrap gap-2 p-2 mb-4 bg-diary-light rounded-md;
+  @apply flex flex-wrap gap-2 p-2 mb-4 bg-diary-light dark:bg-gray-800 rounded-md;
 }
 
 .diary-toolbar button {
-  @apply p-2 rounded-md hover:bg-diary-lavender transition-colors;
+  @apply p-2 rounded-md hover:bg-diary-lavender dark:hover:bg-purple-900/30 transition-colors;
 }

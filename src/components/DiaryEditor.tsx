@@ -1,5 +1,5 @@
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,8 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-save effect
   useEffect(() => {
@@ -70,7 +72,7 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
 
   // Function to insert text formatting at cursor position
   const insertFormat = (format: string) => {
-    const textarea = document.querySelector(".diary-editor") as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
@@ -95,7 +97,10 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
         insertedText = `\n1. ${selectedText}`;
         break;
       case "image":
-        insertedText = `![${selectedText || "Image description"}](image-url)`;
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+          return;
+        }
         break;
       default:
         insertedText = selectedText;
@@ -114,6 +119,59 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
       textarea.selectionStart = start + insertedText.length;
       textarea.selectionEnd = start + insertedText.length;
     }, 0);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !user) {
+      return;
+    }
+
+    try {
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload the file to Supabase storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('entries-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL of the uploaded image
+      const { data: urlData } = supabase.storage
+        .from('entries-images')
+        .getPublicUrl(filePath);
+
+      // Insert the image markdown into the content
+      const textarea = textareaRef.current;
+      if (textarea) {
+        const imageMarkdown = `![Image](${urlData.publicUrl})`;
+        const cursorPos = textarea.selectionStart;
+        const textBefore = textarea.value.substring(0, cursorPos);
+        const textAfter = textarea.value.substring(cursorPos);
+        
+        setContent(textBefore + imageMarkdown + textAfter);
+        
+        // Reset the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+
+        toast({
+          title: "Image uploaded",
+          description: "Image has been added to your entry."
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
@@ -273,6 +331,13 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
 
   return (
     <div className="diary-editor-container">
+      <input 
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageUpload}
+      />
       <div className="mb-6">
         <Label htmlFor="entry-title" className="text-lg font-medium">Entry Title</Label>
         <Input
@@ -285,7 +350,7 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
       </div>
 
       <div className="mb-6">
-        <div className="diary-toolbar flex flex-wrap gap-1 mb-2 bg-gray-50 p-2 rounded">
+        <div className="diary-toolbar flex flex-wrap gap-1 mb-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
           <Button
             variant="ghost"
             size="sm"
@@ -337,10 +402,11 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
         </div>
 
         <textarea
+          ref={textareaRef}
           placeholder="Start writing your thoughts here..."
           value={content}
           onChange={handleContentChange}
-          className="diary-editor w-full focus:outline-none min-h-[300px] p-3 border rounded-md"
+          className="diary-editor w-full focus:outline-none min-h-[300px] p-3 border rounded-md dark:bg-gray-800 dark:text-white dark:border-gray-700"
         />
       </div>
 
@@ -351,15 +417,15 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
           <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="mood" className="p-4 bg-white rounded-md shadow-sm mt-2 border">
-          <div className="text-lg mb-3">How are you feeling today?</div>
+        <TabsContent value="mood" className="p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm mt-2 border dark:border-gray-700">
+          <div className="text-lg mb-3 dark:text-white">How are you feeling today?</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {moodOptions.map((option) => (
               <Button
                 key={option.value}
                 type="button"
                 variant="outline"
-                className={`justify-start ${mood === option.value ? option.color : ""}`}
+                className={`justify-start dark:text-white dark:border-gray-700 ${mood === option.value ? option.color : ""}`}
                 onClick={() => setMood(option.value)}
               >
                 {option.label}
@@ -446,7 +512,7 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
           {existingEntry && (
             <Button
               variant="outline"
-              className="text-red-600 border-red-200 hover:bg-red-50"
+              className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/30 dark:text-red-400"
               onClick={deleteEntry}
               disabled={isDeleting || isSaving}
             >
@@ -461,12 +527,13 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
             variant="outline"
             onClick={() => navigate('/diary')}
             disabled={isSaving}
+            className="dark:border-gray-700 dark:text-white"
           >
             Cancel
           </Button>
           <Button
             onClick={() => saveEntry()}
-            className="bg-diary-purple hover:bg-diary-purple/90"
+            className="bg-diary-purple hover:bg-diary-purple/90 dark:bg-diary-purple/80 dark:hover:bg-diary-purple"
             disabled={isSaving}
           >
             <Save size={18} className="mr-2" />
