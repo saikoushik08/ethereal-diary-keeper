@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -57,6 +57,44 @@ const Settings = () => {
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('diary_settings');
+    const savedAppearance = localStorage.getItem('diary_appearance');
+    
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(prevSettings => ({ ...prevSettings, ...parsedSettings }));
+      } catch (error) {
+        console.error("Error parsing saved settings:", error);
+      }
+    }
+    
+    if (savedAppearance) {
+      try {
+        const parsedAppearance = JSON.parse(savedAppearance);
+        setSettings(prevSettings => ({ 
+          ...prevSettings, 
+          theme: parsedAppearance.theme || prevSettings.theme,
+          fontSize: parsedAppearance.fontSize || prevSettings.fontSize
+        }));
+        
+        if (parsedAppearance.theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+        
+        document.documentElement.style.fontSize = 
+          parsedAppearance.fontSize === "small" ? "14px" : 
+          parsedAppearance.fontSize === "large" ? "18px" : 
+          "16px";
+      } catch (error) {
+        console.error("Error parsing saved appearance:", error);
+      }
+    }
+  }, []);
+
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/" />;
   }
@@ -70,7 +108,10 @@ const Settings = () => {
       setSaving(true);
       
       localStorage.setItem('diary_settings', JSON.stringify({
-        ...settings,
+        autoSave: settings.autoSave,
+        reminders: settings.reminders,
+        aiAnalysis: settings.aiAnalysis,
+        language: settings.language,
         lastUpdated: new Date().toISOString()
       }));
       

@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Json } from "@/integrations/supabase/types";
 
 interface Todo {
   text: string;
@@ -163,12 +164,15 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
     try {
       setIsSaving(true);
 
+      // Convert todos array to a JSON-compatible format
+      const todosJson = todos.length > 0 ? todos as unknown as Json : null;
+
       const entryData = {
         title,
         content,
         mood,
         tags,
-        todos: todos.length > 0 ? todos : null,
+        todos: todosJson,
         user_id: user.id,
       };
 

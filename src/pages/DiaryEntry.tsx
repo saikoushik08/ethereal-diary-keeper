@@ -2,12 +2,11 @@
 import { DiaryNav } from "@/components/DiaryNav";
 import { DiaryEditor } from "@/components/DiaryEditor";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams, Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
