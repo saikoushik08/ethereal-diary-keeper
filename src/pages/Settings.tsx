@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
@@ -80,28 +79,21 @@ const Settings = () => {
           fontSize: parsedAppearance.fontSize || prevSettings.fontSize
         }));
         
-        applyTheme(parsedAppearance.theme || 'light');
-        applyFontSize(parsedAppearance.fontSize || 'medium');
+        if (parsedAppearance.theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+        
+        document.documentElement.style.fontSize = 
+          parsedAppearance.fontSize === "small" ? "14px" : 
+          parsedAppearance.fontSize === "large" ? "18px" : 
+          "16px";
       } catch (error) {
         console.error("Error parsing saved appearance:", error);
       }
     }
   }, []);
-
-  const applyTheme = (theme: string) => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
-  const applyFontSize = (size: string) => {
-    document.documentElement.style.fontSize = 
-      size === "small" ? "14px" : 
-      size === "large" ? "18px" : 
-      "16px";
-  };
 
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/" />;
@@ -143,8 +135,16 @@ const Settings = () => {
     try {
       setSaving(true);
       
-      applyTheme(settings.theme);
-      applyFontSize(settings.fontSize);
+      if (settings.theme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      
+      document.documentElement.style.fontSize = 
+        settings.fontSize === "small" ? "14px" : 
+        settings.fontSize === "large" ? "18px" : 
+        "16px";
       
       localStorage.setItem('diary_appearance', JSON.stringify({
         theme: settings.theme,
@@ -394,7 +394,7 @@ const Settings = () => {
                       <div className="w-full h-24 bg-white border rounded-md mb-2 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         Light
                       </div>
-                      <span className="dark:text-white">Light Mode</span>
+                      <span>Light Mode</span>
                     </Button>
                     <Button 
                       variant="outline" 
@@ -404,7 +404,7 @@ const Settings = () => {
                       <div className="w-full h-24 bg-diary-dark border rounded-md mb-2 flex items-center justify-center text-white dark:bg-gray-900 dark:border-gray-700">
                         Dark
                       </div>
-                      <span className="dark:text-white">Dark Mode</span>
+                      <span>Dark Mode</span>
                     </Button>
                   </div>
                 </div>

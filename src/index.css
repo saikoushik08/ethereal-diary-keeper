@@ -1,114 +1,169 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
- 
+
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
- 
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
+
+    --primary: 262 79% 74%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
+
+    --muted: 240 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
+
+    --accent: 232 70% 91%;
     --accent-foreground: 222.2 47.4% 11.2%;
- 
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    --ring: 262 79% 74%;
 
-    --diary-purple: 255 90% 65%;
-    --diary-lavender: 240 96% 95%;
-    --diary-blue: 210 100% 95%;
-    --diary-dark: 240 20% 20%;
+    --radius: 0.75rem;
   }
- 
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
- 
+
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
- 
+
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
+
+    --primary: 262 79% 74%;
+    --primary-foreground: 0 0% 100%;
+
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
- 
+
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
+
+    --accent: 232 70% 91%;
     --accent-foreground: 210 40% 98%;
- 
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-
-    --diary-purple: 255 70% 75%;
-    --diary-lavender: 240 50% 25%;
-    --diary-blue: 210 50% 25%;
-    --diary-dark: 240 20% 20%;
+    --ring: 262 79% 74%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-medium;
   }
 }
 
-@layer components {
-  .bg-diary-purple {
-    @apply bg-[hsl(var(--diary-purple))];
-  }
-  .text-diary-purple {
-    @apply text-[hsl(var(--diary-purple))];
-  }
-  .bg-diary-lavender {
-    @apply bg-[hsl(var(--diary-lavender))];
-  }
-  .text-diary-lavender {
-    @apply text-[hsl(var(--diary-lavender))];
-  }
-  .bg-diary-blue {
-    @apply bg-[hsl(var(--diary-blue))];
-  }
-  .text-diary-blue {
-    @apply text-[hsl(var(--diary-blue))];
-  }
-  .bg-diary-dark {
-    @apply bg-[hsl(var(--diary-dark))];
-  }
-  .text-diary-dark {
-    @apply text-[hsl(var(--diary-dark))];
-  }
+/* Dark mode specific styles */
+.dark .bg-white {
+  @apply bg-gray-900;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+.dark .text-gray-600, 
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+.dark .border-gray-200, 
+.dark .border-gray-300 {
+  @apply border-gray-700;
+}
+
+.dark .bg-diary-lavender {
+  @apply bg-purple-900/30;
+}
+
+.dark .bg-diary-blue {
+  @apply bg-blue-900/30;
+}
+
+.dark .bg-green-100 {
+  @apply bg-green-900/30;
+}
+
+/* Book 3D effect styles */
+.book-container {
+  perspective: 1200px;
+}
+
+.book {
+  transform-style: preserve-3d;
+  transition: transform 1s ease;
+}
+
+.book-cover {
+  position: absolute;
+  backface-visibility: hidden;
+}
+
+.book-cover-front {
+  transform: rotateY(0deg);
+  z-index: 2;
+}
+
+.book-cover-back {
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+.book-page {
+  position: absolute;
+  backface-visibility: hidden;
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+.book.open {
+  transform: rotateY(-180deg);
+}
+
+/* Editor styles */
+.diary-editor {
+  @apply bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md dark:text-white;
+  min-height: 300px;
+}
+
+.diary-editor:focus {
+  @apply outline-none ring-2 ring-diary-purple ring-opacity-50;
+}
+
+.diary-toolbar {
+  @apply flex flex-wrap gap-2 p-2 mb-4 bg-diary-light dark:bg-gray-800 rounded-md;
+}
+
+.diary-toolbar button {
+  @apply p-2 rounded-md hover:bg-diary-lavender dark:hover:bg-purple-900/30 transition-colors;
 }

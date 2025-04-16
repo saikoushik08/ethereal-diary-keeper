@@ -1,6 +1,6 @@
 
 import { DiaryNav } from "@/components/DiaryNav";
-import DiaryEditor from "@/components/DiaryEditor";
+import { DiaryEditor } from "@/components/DiaryEditor";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, useParams, Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -97,7 +97,7 @@ const DiaryEntry = () => {
             </div>
             
             <div className="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow-sm dark:border dark:border-gray-700">
-              <DiaryEditor entryId={null} initialContent={null} onSave={null} />
+              <DiaryEditor existingEntry={null} />
             </div>
           </>
         ) : (
@@ -115,7 +115,7 @@ const DiaryEntry = () => {
             
             <div className="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow-sm dark:border dark:border-gray-700">
               {entry ? (
-                <DiaryEditor entryId={entry.id} initialContent={entry.content} onSave={null} />
+                <DiaryEditor existingEntry={entry} />
               ) : (
                 <div className="text-center py-12">
                   <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-3/4 mx-auto mb-4 rounded"></div>

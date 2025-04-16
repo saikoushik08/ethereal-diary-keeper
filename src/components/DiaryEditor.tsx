@@ -1,251 +1,207 @@
 
-import { useState, useRef, useEffect } from "react";
-import { Editor, EditorState, RichUtils, AtomicBlockUtils, convertToRaw, convertFromRaw } from 'draft-js';
-import 'draft-js/dist/Draft.css';
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, ChangeEvent, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Image as ImageIcon,
+  CheckSquare,
+  Tag,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Bold, Italic, Underline, Image as ImageIcon, Link, List, ListOrdered } from "lucide-react";
-import { Json } from "@/integrations/supabase/types"; // Import Supabase Json type
+import { useNavigate } from "react-router-dom";
+import { Json } from "@/integrations/supabase/types";
 
-// Define TodoItem interface
-interface TodoItem {
+interface Todo {
   text: string;
-  completed: boolean;
+  done: boolean;
 }
 
-// Draft.js media component
-const MediaComponent = ({ block, contentState }) => {
-  const entity = contentState.getEntity(block.getEntityAt(0));
-  const { src } = entity.getData();
-  const type = entity.getType();
+interface Entry {
+  id: string;
+  title: string;
+  content: string;
+  mood: string;
+  tags: string[];
+  todos?: Todo[];
+  created_at?: string;
+  user_id?: string;
+}
 
-  if (type === 'image') {
-    return <img src={src} alt="Entry image" className="max-w-full h-auto my-4 rounded-md" />;
-  }
-  return null;
-};
+interface DiaryEditorProps {
+  existingEntry: Entry | null;
+}
 
-const DiaryEditor = ({ entryId, initialContent, onSave }) => {
-  const [editorState, setEditorState] = useState(() => {
-    if (initialContent) {
-      try {
-        const contentState = convertFromRaw(JSON.parse(initialContent));
-        return EditorState.createWithContent(contentState);
-      } catch (e) {
-        console.error("Error parsing editor content:", e);
-        return EditorState.createEmpty();
-      }
-    }
-    return EditorState.createEmpty();
-  });
-  
-  const [title, setTitle] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [autoSave, setAutoSave] = useState(false);
-  const [mood, setMood] = useState("neutral");
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
-  const [todos, setTodos] = useState<TodoItem[]>([]);
-  const [todoInput, setTodoInput] = useState("");
+export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [title, setTitle] = useState(existingEntry?.title || "");
+  const [content, setContent] = useState(existingEntry?.content || "");
+  const [mood, setMood] = useState(existingEntry?.mood || "neutral");
+  const [tag, setTag] = useState("");
+  const [tags, setTags] = useState<string[]>(existingEntry?.tags || []);
+  const [todos, setTodos] = useState<Todo[]>(existingEntry?.todos || []);
+  const [todoText, setTodoText] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
-  const editorRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-save effect
   useEffect(() => {
-    // Load entry data if editing existing entry
-    const loadEntry = async () => {
-      if (entryId) {
-        try {
-          const { data, error } = await supabase
-            .from('entries')
-            .select('*')
-            .eq('id', entryId)
-            .maybeSingle();
-          
-          if (error) throw error;
-          
-          if (data) {
-            setTitle(data.title);
-            setMood(data.mood || "neutral");
-            setTags(data.tags || []);
-            
-            // Parse todos array from JSON
-            if (data.todos) {
-              try {
-                const parsedTodos = Array.isArray(data.todos) 
-                  ? data.todos.map(todo => typeof todo === 'object' ? todo : JSON.parse(String(todo)))
-                  : [];
-                setTodos(parsedTodos as TodoItem[]);
-              } catch (e) {
-                console.error("Error parsing todos:", e);
-                setTodos([]);
-              }
-            }
-            
-            if (data.content) {
-              try {
-                const contentState = convertFromRaw(JSON.parse(data.content));
-                setEditorState(EditorState.createWithContent(contentState));
-              } catch (e) {
-                console.error("Error parsing editor content:", e);
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Error loading entry:", error);
-          toast({
-            title: "Error loading entry",
-            description: "Could not load the diary entry.",
-            variant: "destructive"
-          });
-        }
+    const saveTimer = setTimeout(() => {
+      if (title && content && !isSaving && !isDeleting) {
+        saveEntry(true);
       }
-    };
-    
-    // Check user settings for auto-save
-    const checkSettings = () => {
-      const settingsStr = localStorage.getItem('diary_settings');
-      if (settingsStr) {
-        try {
-          const settings = JSON.parse(settingsStr);
-          setAutoSave(settings.autoSave || false);
-        } catch (e) {
-          console.error("Error parsing settings:", e);
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => clearTimeout(saveTimer);
+  }, [title, content, mood, tags, todos]);
+
+  // Function to insert text formatting at cursor position
+  const insertFormat = (format: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    let insertedText = "";
+
+    switch (format) {
+      case "bold":
+        insertedText = `**${selectedText}**`;
+        break;
+      case "italic":
+        insertedText = `*${selectedText}*`;
+        break;
+      case "underline":
+        insertedText = `<u>${selectedText}</u>`;
+        break;
+      case "list":
+        insertedText = `\n- ${selectedText}`;
+        break;
+      case "ordered-list":
+        insertedText = `\n1. ${selectedText}`;
+        break;
+      case "image":
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+          return;
         }
-      }
-    };
-    
-    loadEntry();
-    checkSettings();
-  }, [entryId, toast]);
-
-  // Focus editor on mount
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.focus();
+        break;
+      default:
+        insertedText = selectedText;
     }
-  }, []);
 
-  // Auto-save functionality
-  useEffect(() => {
-    let saveInterval;
+    const newContent = 
+      textarea.value.substring(0, start) + 
+      insertedText + 
+      textarea.value.substring(end);
     
-    if (autoSave && user) {
-      saveInterval = setInterval(() => {
-        if (title.trim()) {
-          handleSave(false);
-        }
-      }, 30000); // Auto-save every 30 seconds
-    }
+    setContent(newContent);
     
-    return () => {
-      if (saveInterval) clearInterval(saveInterval);
-    };
-  }, [autoSave, title, editorState, user, tags, mood, todos]);
-
-  const handleKeyCommand = (command, editorState) => {
-    const newState = RichUtils.handleKeyCommand(editorState, command);
-    
-    if (newState) {
-      setEditorState(newState);
-      return 'handled';
-    }
-    
-    return 'not-handled';
+    // Set focus back to textarea
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = start + insertedText.length;
+      textarea.selectionEnd = start + insertedText.length;
+    }, 0);
   };
 
-  const toggleInlineStyle = (style) => {
-    setEditorState(RichUtils.toggleInlineStyle(editorState, style));
-  };
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !user) {
+      return;
+    }
 
-  const toggleBlockType = (blockType) => {
-    setEditorState(RichUtils.toggleBlockType(editorState, blockType));
-  };
-
-  const handleImageUpload = async (file) => {
-    if (!file || !user) return;
-    
     try {
+      const file = e.target.files[0];
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('diary-images')
+
+      // Upload the file to Supabase storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('entries-images')
         .upload(filePath, file);
-      
+
       if (uploadError) throw uploadError;
-      
-      const { data } = supabase.storage
-        .from('diary-images')
+
+      // Get the public URL of the uploaded image
+      const { data: urlData } = supabase.storage
+        .from('entries-images')
         .getPublicUrl(filePath);
-      
-      const contentState = editorState.getCurrentContent();
-      const contentStateWithEntity = contentState.createEntity(
-        'image',
-        'IMMUTABLE',
-        { src: data.publicUrl }
-      );
-      
-      const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-      const newEditorState = EditorState.set(editorState, { 
-        currentContent: contentStateWithEntity 
-      });
-      
-      setEditorState(AtomicBlockUtils.insertAtomicBlock(
-        newEditorState,
-        entityKey,
-        ' '
-      ));
-      
-      toast({
-        title: "Image uploaded",
-        description: "Image has been added to your entry."
-      });
+
+      // Insert the image markdown into the content
+      const textarea = textareaRef.current;
+      if (textarea) {
+        const imageMarkdown = `![Image](${urlData.publicUrl})`;
+        const cursorPos = textarea.selectionStart;
+        const textBefore = textarea.value.substring(0, cursorPos);
+        const textAfter = textarea.value.substring(cursorPos);
+        
+        setContent(textBefore + imageMarkdown + textAfter);
+        
+        // Reset the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+
+        toast({
+          title: "Image uploaded",
+          description: "Image has been added to your entry."
+        });
+      }
     } catch (error) {
       console.error("Error uploading image:", error);
       toast({
         title: "Upload failed",
-        description: "There was a problem uploading your image.",
+        description: "Failed to upload image. Please try again.",
         variant: "destructive"
       });
     }
   };
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput("");
-    }
+  const handleAddTodo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!todoText.trim()) return;
+    
+    setTodos([...todos, { text: todoText, done: false }]);
+    setTodoText("");
   };
 
-  const handleRemoveTag = (tagToRemove) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
-
-  const handleAddTodo = () => {
-    if (todoInput.trim()) {
-      setTodos([...todos, { text: todoInput.trim(), completed: false }]);
-      setTodoInput("");
-    }
-  };
-
-  const handleToggleTodo = (index) => {
+  const toggleTodo = (index: number) => {
     const newTodos = [...todos];
-    newTodos[index].completed = !newTodos[index].completed;
+    newTodos[index].done = !newTodos[index].done;
     setTodos(newTodos);
   };
 
-  const handleRemoveTodo = (index) => {
-    setTodos(todos.filter((_, i) => i !== index));
+  const handleAddTag = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tag.trim() || tags.includes(tag)) return;
+    
+    setTags([...tags, tag]);
+    setTag("");
   };
 
-  const handleSave = async (showToast = true) => {
-    if (!title.trim()) {
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+
+  const saveEntry = async (isAutoSave = false) => {
+    if (!title) {
       toast({
         title: "Title required",
         description: "Please add a title for your entry.",
@@ -253,73 +209,71 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
       });
       return;
     }
-    
+
     if (!user) {
       toast({
-        title: "Authentication required",
-        description: "You must be logged in to save entries.",
+        title: "Authentication error",
+        description: "You need to be logged in to save entries.",
         variant: "destructive"
       });
       return;
     }
-    
-    setIsSaving(true);
-    
+
     try {
-      const contentState = editorState.getCurrentContent();
-      const content = JSON.stringify(convertToRaw(contentState));
-      
-      // Convert todos to a format that can be stored in Supabase
-      const todoData = todos as unknown as Json;
-      
+      setIsSaving(true);
+
+      // Convert todos array to a JSON-compatible format
+      const todosJson = todos.length > 0 ? todos as unknown as Json : null;
+
       const entryData = {
         title,
         content,
         mood,
         tags,
-        todos: todoData,
+        todos: todosJson,
         user_id: user.id,
-        updated_at: new Date().toISOString()
       };
-      
+
       let result;
-      
-      if (entryId) {
+
+      if (existingEntry) {
         // Update existing entry
-        result = await supabase
+        const { data, error } = await supabase
           .from('entries')
           .update(entryData)
-          .eq('id', entryId);
+          .eq('id', existingEntry.id)
+          .select();
+
+        if (error) throw error;
+        result = data[0];
       } else {
         // Create new entry
-        result = await supabase
+        const { data, error } = await supabase
           .from('entries')
-          .insert({
-            ...entryData,
-            created_at: new Date().toISOString()
-          });
+          .insert(entryData)
+          .select();
+
+        if (error) throw error;
+        result = data[0];
       }
-      
-      if (result.error) throw result.error;
-      
-      if (showToast) {
+
+      if (!isAutoSave) {
         toast({
-          title: entryId ? "Entry updated" : "Entry saved",
-          description: entryId 
+          title: existingEntry ? "Entry updated" : "Entry saved",
+          description: existingEntry 
             ? "Your diary entry has been updated." 
-            : "Your diary entry has been saved."
+            : "Your diary entry has been saved.",
         });
-      }
-      
-      // Call the onSave callback if provided
-      if (onSave) {
-        onSave(result.data);
+
+        if (!existingEntry) {
+          navigate(`/diary/${result.id}`);
+        }
       }
     } catch (error) {
       console.error("Error saving entry:", error);
       toast({
-        title: "Save failed",
-        description: "There was a problem saving your entry.",
+        title: "Error",
+        description: "Failed to save your entry. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -327,129 +281,266 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
     }
   };
 
-  // Custom block renderer for media
-  const blockRendererFn = (block) => {
-    if (block.getType() === 'atomic') {
-      return {
-        component: MediaComponent,
-        editable: false,
-      };
+  const deleteEntry = async () => {
+    if (!existingEntry) return;
+    
+    if (!confirm("Are you sure you want to delete this entry? This action cannot be undone.")) {
+      return;
     }
-    return null;
+
+    try {
+      setIsDeleting(true);
+      
+      const { error } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', existingEntry.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Entry deleted",
+        description: "Your diary entry has been deleted.",
+      });
+
+      navigate('/diary');
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete your entry. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
-  
-  const currentStyle = editorState.getCurrentInlineStyle();
-  const selection = editorState.getSelection();
-  const blockType = editorState
-    .getCurrentContent()
-    .getBlockForKey(selection.getStartKey())
-    .getType();
+
+  const handleContentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+  };
+
+  const moodOptions = [
+    { value: "happy", label: "😄 Happy", color: "bg-green-100 text-green-800" },
+    { value: "calm", label: "😌 Calm", color: "bg-blue-100 text-blue-800" },
+    { value: "neutral", label: "😐 Neutral", color: "bg-gray-100 text-gray-800" },
+    { value: "sad", label: "😔 Sad", color: "bg-purple-100 text-purple-800" },
+    { value: "anxious", label: "😰 Anxious", color: "bg-yellow-100 text-yellow-800" },
+    { value: "angry", label: "😠 Angry", color: "bg-red-100 text-red-800" },
+  ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 dark:bg-gray-900">
-      <Input
-        type="text"
-        placeholder="Entry Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="text-2xl font-bold mb-4 px-4 py-3 bg-white/80 backdrop-blur-sm border-0 rounded-lg shadow-sm focus:ring-2 focus:ring-diary-purple dark:bg-gray-800 dark:text-white"
+    <div className="diary-editor-container">
+      <input 
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageUpload}
       />
-      
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6 dark:bg-gray-800 dark:border-gray-700">
-        <div className="flex flex-wrap gap-1 px-4 py-2 border-b border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-          <Button 
-            variant="ghost" 
+      <div className="mb-6">
+        <Label htmlFor="entry-title" className="text-lg font-medium">Entry Title</Label>
+        <Input
+          id="entry-title"
+          placeholder="What's on your mind today?"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="text-lg mt-1"
+        />
+      </div>
+
+      <div className="mb-6">
+        <div className="diary-toolbar flex flex-wrap gap-1 mb-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
+          <Button
+            variant="ghost"
             size="sm"
-            className={`${currentStyle.has('BOLD') ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
-            onClick={() => toggleInlineStyle('BOLD')}
+            onClick={() => insertFormat("bold")}
+            title="Bold"
           >
             <Bold size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
-            className={`${currentStyle.has('ITALIC') ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
-            onClick={() => toggleInlineStyle('ITALIC')}
+            onClick={() => insertFormat("italic")}
+            title="Italic"
           >
             <Italic size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
-            className={`${currentStyle.has('UNDERLINE') ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
-            onClick={() => toggleInlineStyle('UNDERLINE')}
+            onClick={() => insertFormat("underline")}
+            title="Underline"
           >
             <Underline size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
-            className={`${blockType === 'unordered-list-item' ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
-            onClick={() => toggleBlockType('unordered-list-item')}
+            onClick={() => insertFormat("list")}
+            title="Bullet List"
           >
             <List size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
-            className={`${blockType === 'ordered-list-item' ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
-            onClick={() => toggleBlockType('ordered-list-item')}
+            onClick={() => insertFormat("ordered-list")}
+            title="Numbered List"
           >
             <ListOrdered size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
-            onClick={() => fileInputRef.current.click()}
+            onClick={() => insertFormat("image")}
+            title="Insert Image"
           >
             <ImageIcon size={18} />
           </Button>
-          <input 
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                handleImageUpload(e.target.files[0]);
-                e.target.value = null; // Reset file input
-              }
-            }}
-          />
+        </div>
+
+        <textarea
+          ref={textareaRef}
+          placeholder="Start writing your thoughts here..."
+          value={content}
+          onChange={handleContentChange}
+          className="diary-editor w-full focus:outline-none min-h-[300px] p-3 border rounded-md dark:bg-gray-800 dark:text-white dark:border-gray-700"
+        />
+      </div>
+
+      <Tabs defaultValue="mood">
+        <TabsList>
+          <TabsTrigger value="mood">Mood</TabsTrigger>
+          <TabsTrigger value="todos">To-Do List</TabsTrigger>
+          <TabsTrigger value="tags">Tags</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="mood" className="p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm mt-2 border dark:border-gray-700">
+          <div className="text-lg mb-3 dark:text-white">How are you feeling today?</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {moodOptions.map((option) => (
+              <Button
+                key={option.value}
+                type="button"
+                variant="outline"
+                className={`justify-start dark:text-white dark:border-gray-700 ${mood === option.value ? option.color : ""}`}
+                onClick={() => setMood(option.value)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="todos" className="p-4 bg-white rounded-md shadow-sm mt-2 border">
+          <form onSubmit={handleAddTodo} className="mb-4 flex">
+            <Input
+              placeholder="Add a task..."
+              value={todoText}
+              onChange={(e) => setTodoText(e.target.value)}
+              className="mr-2"
+            />
+            <Button type="submit">Add</Button>
+          </form>
+          
+          <div className="space-y-2">
+            {todos.map((todo, index) => (
+              <div
+                key={index}
+                className="flex items-center p-2 bg-white border rounded-md"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mr-2"
+                  onClick={() => toggleTodo(index)}
+                >
+                  <CheckSquare 
+                    size={18} 
+                    className={todo.done ? "text-green-500" : "text-gray-400"} 
+                    fill={todo.done ? "currentColor" : "none"}
+                  />
+                </Button>
+                <span className={todo.done ? "line-through text-gray-400" : ""}>
+                  {todo.text}
+                </span>
+              </div>
+            ))}
+            {todos.length === 0 && (
+              <p className="text-gray-500 text-center py-4">No tasks yet. Add something to do!</p>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="tags" className="p-4 bg-white rounded-md shadow-sm mt-2 border">
+          <form onSubmit={handleAddTag} className="mb-4 flex">
+            <Input
+              placeholder="Add a tag..."
+              value={tag}
+              onChange={(e) => setTag(e.target.value)}
+              className="mr-2"
+            />
+            <Button type="submit">
+              <Tag size={18} className="mr-2" />
+              Add
+            </Button>
+          </form>
+          
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <Badge 
+                key={tag}
+                variant="secondary"
+                className="px-3 py-1 cursor-pointer"
+                onClick={() => removeTag(tag)}
+              >
+                {tag}
+                <span className="ml-2">×</span>
+              </Badge>
+            ))}
+            {tags.length === 0 && (
+              <p className="text-gray-500 text-center py-4 w-full">No tags yet. Add some to categorize your entry!</p>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex justify-between mt-6">
+        <div>
+          {existingEntry && (
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/30 dark:text-red-400"
+              onClick={deleteEntry}
+              disabled={isDeleting || isSaving}
+            >
+              <Trash2 size={18} className="mr-2" />
+              Delete
+            </Button>
+          )}
         </div>
         
-        <div className="px-4 py-3 min-h-[300px] dark:text-white">
-          <Editor
-            editorState={editorState}
-            onChange={setEditorState}
-            handleKeyCommand={handleKeyCommand}
-            ref={editorRef}
-            blockRendererFn={blockRendererFn}
-            placeholder="Write your thoughts here..."
-          />
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/diary')}
+            disabled={isSaving}
+            className="dark:border-gray-700 dark:text-white"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => saveEntry()}
+            className="bg-diary-purple hover:bg-diary-purple/90 dark:bg-diary-purple/80 dark:hover:bg-diary-purple"
+            disabled={isSaving}
+          >
+            <Save size={18} className="mr-2" />
+            {isSaving ? 'Saving...' : 'Save Entry'}
+          </Button>
         </div>
-      </div>
-      
-      {/* Mood selector, tags, todos, and save buttons */}
-      
-      <div className="flex justify-end mt-6">
-        <Button 
-          variant="outline" 
-          className="mr-2"
-          onClick={() => window.history.back()}
-        >
-          Cancel
-        </Button>
-        <Button 
-          variant="default"
-          onClick={() => handleSave()}
-          disabled={isSaving}
-        >
-          {isSaving ? "Saving..." : (entryId ? "Update Entry" : "Save Entry")}
-        </Button>
       </div>
     </div>
   );
 };
-
-export default DiaryEditor;
