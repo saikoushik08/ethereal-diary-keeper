@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Editor, EditorState, RichUtils, AtomicBlockUtils, convertToRaw, convertFromRaw } from 'draft-js';
 import 'draft-js/dist/Draft.css';
@@ -7,6 +8,12 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Bold, Italic, Underline, Image as ImageIcon, Link, List, ListOrdered } from "lucide-react";
+
+// Define TodoItem interface
+interface TodoItem {
+  text: string;
+  completed: boolean;
+}
 
 // Draft.js media component
 const MediaComponent = ({ block, contentState }) => {
@@ -38,9 +45,9 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [autoSave, setAutoSave] = useState(false);
   const [mood, setMood] = useState("neutral");
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [todos, setTodos] = useState([]);
+  const [todos, setTodos] = useState<TodoItem[]>([]);
   const [todoInput, setTodoInput] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
@@ -64,7 +71,7 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
             setTitle(data.title);
             setMood(data.mood || "neutral");
             setTags(data.tags || []);
-            setTodos(data.todos || []);
+            setTodos(data.todos ? JSON.parse(JSON.stringify(data.todos)) : []);
             
             if (data.content) {
               try {
@@ -407,7 +414,7 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
         </div>
       </div>
       
-      {/* Mood selector, tags, todos, and save buttons go here */}
+      {/* Mood selector, tags, todos, and save buttons */}
       
       <div className="flex justify-end mt-6">
         <Button 
