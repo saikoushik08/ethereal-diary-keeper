@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +30,7 @@ const Profile = () => {
     return <Navigate to="/" />;
   }
 
+  // Update local state when profile changes
   useEffect(() => {
     if (profile) {
       setUsername(profile.username || "");
@@ -158,15 +158,10 @@ const Profile = () => {
     try {
       setSaving(true);
       
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username,
-          bio
-        })
-        .eq('id', user.id);
-      
-      if (error) throw error;
+      await updateUserProfile({
+        username,
+        bio,
+      });
       
       toast({
         title: "Profile updated",
