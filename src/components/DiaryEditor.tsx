@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Bold, Italic, Underline, Image as ImageIcon, Link, List, ListOrdered } from "lucide-react";
+import { Json } from "@/integrations/supabase/types"; // Import Supabase Json type
 
 // Define TodoItem interface
 interface TodoItem {
@@ -71,7 +72,19 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
             setTitle(data.title);
             setMood(data.mood || "neutral");
             setTags(data.tags || []);
-            setTodos(data.todos ? JSON.parse(JSON.stringify(data.todos)) : []);
+            
+            // Parse todos array from JSON
+            if (data.todos) {
+              try {
+                const parsedTodos = Array.isArray(data.todos) 
+                  ? data.todos.map(todo => typeof todo === 'object' ? todo : JSON.parse(String(todo)))
+                  : [];
+                setTodos(parsedTodos as TodoItem[]);
+              } catch (e) {
+                console.error("Error parsing todos:", e);
+                setTodos([]);
+              }
+            }
             
             if (data.content) {
               try {
@@ -256,12 +269,15 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
       const contentState = editorState.getCurrentContent();
       const content = JSON.stringify(convertToRaw(contentState));
       
+      // Convert todos to a format that can be stored in Supabase
+      const todoData = todos as unknown as Json;
+      
       const entryData = {
         title,
         content,
         mood,
         tags,
-        todos,
+        todos: todoData,
         user_id: user.id,
         updated_at: new Date().toISOString()
       };
@@ -278,10 +294,10 @@ const DiaryEditor = ({ entryId, initialContent, onSave }) => {
         // Create new entry
         result = await supabase
           .from('entries')
-          .insert([{
+          .insert({
             ...entryData,
             created_at: new Date().toISOString()
-          }]);
+          });
       }
       
       if (result.error) throw result.error;
