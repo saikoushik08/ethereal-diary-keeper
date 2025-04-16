@@ -75,12 +75,9 @@ const Profile = () => {
       console.log("Avatar uploaded successfully, URL:", data.publicUrl);
 
       // Update profile with new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: data.publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
+      await updateUserProfile({
+        avatar_url: data.publicUrl
+      });
 
       setAvatarUrl(data.publicUrl);
       
