@@ -7,15 +7,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoginForm } from "@/components/LoginForm";
 import { SignupForm } from "@/components/SignupForm";
-import { AboutSection } from "@/components/AboutSection";
-import { FeatureSection } from "@/components/FeatureSection";
-import { ContactSection } from "@/components/ContactSection";
+// Fix the imports to use default exports
+import AboutSection from "@/components/AboutSection";
+import FeatureSection from "@/components/FeatureSection";
+import ContactSection from "@/components/ContactSection";
 import { useTheme } from "@/context/ThemeContext";
 
 const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const { theme } = useTheme();
   const [selectedTab, setSelectedTab] = useState<string>("login");
+
+  // Add the scrollDown function for the LandingHero component
+  const handleScrollDown = () => {
+    const featureSection = document.querySelector(".feature-section");
+    featureSection?.scrollIntoView({ behavior: "smooth" });
+  };
 
   if (!isLoading && isAuthenticated) {
     return <Navigate to="/dashboard" />;
@@ -24,7 +31,8 @@ const Index = () => {
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="min-h-screen flex flex-col">
-        <LandingHero />
+        {/* Pass the onScrollDown prop to LandingHero */}
+        <LandingHero onScrollDown={handleScrollDown} />
         
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-md mx-auto">
@@ -47,7 +55,10 @@ const Index = () => {
           </div>
         </div>
         
-        <FeatureSection />
+        {/* Add className for scrolling target */}
+        <div className="feature-section">
+          <FeatureSection />
+        </div>
         <AboutSection />
         <ContactSection />
       </div>
