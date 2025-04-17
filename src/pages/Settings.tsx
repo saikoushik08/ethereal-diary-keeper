@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/context/ThemeContext";
 import { AlertTriangle } from "lucide-react";
 import { 
   Dialog,
@@ -26,7 +27,6 @@ interface UserSettings {
   reminders: boolean;
   aiAnalysis: boolean;
   language: string;
-  theme: "light" | "dark";
   fontSize: string;
   encryption: boolean;
   biometric: boolean;
@@ -36,13 +36,14 @@ interface UserSettings {
 
 const Settings = () => {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+  
   const [settings, setSettings] = useState<UserSettings>({
     autoSave: true,
     reminders: false,
     aiAnalysis: true,
     language: "en",
-    theme: "light",
     fontSize: "medium",
     encryption: true,
     biometric: false,
@@ -59,7 +60,6 @@ const Settings = () => {
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('diary_settings');
-    const savedAppearance = localStorage.getItem('diary_appearance');
     
     if (savedSettings) {
       try {
@@ -70,29 +70,13 @@ const Settings = () => {
       }
     }
     
-    if (savedAppearance) {
-      try {
-        const parsedAppearance = JSON.parse(savedAppearance);
-        setSettings(prevSettings => ({ 
-          ...prevSettings, 
-          theme: parsedAppearance.theme || prevSettings.theme,
-          fontSize: parsedAppearance.fontSize || prevSettings.fontSize
-        }));
-        
-        if (parsedAppearance.theme === "dark") {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-        
-        document.documentElement.style.fontSize = 
-          parsedAppearance.fontSize === "small" ? "14px" : 
-          parsedAppearance.fontSize === "large" ? "18px" : 
-          "16px";
-      } catch (error) {
-        console.error("Error parsing saved appearance:", error);
-      }
-    }
+    // Set font size based on setting
+    setSettings(prevSettings => ({
+      ...prevSettings,
+      fontSize: 
+        document.documentElement.style.fontSize === "14px" ? "small" :
+        document.documentElement.style.fontSize === "18px" ? "large" : "medium"
+    }));
   }, []);
 
   if (!isLoading && !isAuthenticated) {
@@ -124,43 +108,6 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const saveAppearanceSettings = async () => {
-    try {
-      setSaving(true);
-      
-      if (settings.theme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-      
-      document.documentElement.style.fontSize = 
-        settings.fontSize === "small" ? "14px" : 
-        settings.fontSize === "large" ? "18px" : 
-        "16px";
-      
-      localStorage.setItem('diary_appearance', JSON.stringify({
-        theme: settings.theme,
-        fontSize: settings.fontSize,
-        lastUpdated: new Date().toISOString()
-      }));
-      
-      toast({
-        title: "Appearance updated",
-        description: "Your appearance settings have been applied.",
-      });
-    } catch (error) {
-      console.error("Error saving appearance:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update appearance. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -288,6 +235,37 @@ const Settings = () => {
     }
   };
 
+  const saveAppearanceSettings = async () => {
+    try {
+      setSaving(true);
+      
+      // Update font size
+      document.documentElement.style.fontSize = 
+        settings.fontSize === "small" ? "14px" : 
+        settings.fontSize === "large" ? "18px" : 
+        "16px";
+      
+      localStorage.setItem('diary_appearance', JSON.stringify({
+        fontSize: settings.fontSize,
+        lastUpdated: new Date().toISOString()
+      }));
+      
+      toast({
+        title: "Appearance updated",
+        description: "Your appearance settings have been applied.",
+      });
+    } catch (error) {
+      console.error("Error saving appearance:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update appearance. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <DiaryNav />
@@ -388,8 +366,8 @@ const Settings = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <Button 
                       variant="outline" 
-                      className={`h-auto p-4 flex flex-col items-center ${settings.theme === "light" ? "border-diary-purple ring-2 ring-diary-purple/50" : "bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"}`}
-                      onClick={() => handleSettingChange("theme", "light")}
+                      className={`h-auto p-4 flex flex-col items-center ${theme === "light" ? "border-diary-purple ring-2 ring-diary-purple/50" : "bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"}`}
+                      onClick={() => setTheme("light")}
                     >
                       <div className="w-full h-24 bg-white border rounded-md mb-2 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         Light
@@ -398,10 +376,10 @@ const Settings = () => {
                     </Button>
                     <Button 
                       variant="outline" 
-                      className={`h-auto p-4 flex flex-col items-center ${settings.theme === "dark" ? "border-diary-purple ring-2 ring-diary-purple/50" : "dark:bg-gray-700 dark:text-white dark:border-gray-600"}`}
-                      onClick={() => handleSettingChange("theme", "dark")}
+                      className={`h-auto p-4 flex flex-col items-center ${theme === "dark" ? "border-diary-purple ring-2 ring-diary-purple/50" : "dark:bg-gray-700 dark:text-white dark:border-gray-600"}`}
+                      onClick={() => setTheme("dark")}
                     >
-                      <div className="w-full h-24 bg-diary-dark border rounded-md mb-2 flex items-center justify-center text-white dark:bg-gray-900 dark:border-gray-700">
+                      <div className="w-full h-24 bg-gray-800 border rounded-md mb-2 flex items-center justify-center text-white dark:bg-gray-900 dark:border-gray-700">
                         Dark
                       </div>
                       <span>Dark Mode</span>
