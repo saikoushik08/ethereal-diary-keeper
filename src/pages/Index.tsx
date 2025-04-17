@@ -34,12 +34,12 @@ const Index = () => {
         {/* Pass the onScrollDown prop to LandingHero */}
         <LandingHero onScrollDown={handleScrollDown} />
         
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-md mx-auto">
-            <Card className="shadow-lg border-gray-200 dark:border-gray-700 dark:bg-gray-800">
+        <div className="container mx-auto px-4 py-8 w-full">
+          <div className="w-full max-w-md mx-auto">
+            <Card className="shadow-lg border-gray-200 dark:border-gray-700 dark:bg-gray-800 w-full">
               <CardContent className="pt-6">
-                <Tabs defaultValue={selectedTab} onValueChange={setSelectedTab}>
-                  <TabsList className="grid grid-cols-2">
+                <Tabs defaultValue={selectedTab} onValueChange={setSelectedTab} className="w-full">
+                  <TabsList className="grid grid-cols-2 w-full">
                     <TabsTrigger value="login">Login</TabsTrigger>
                     <TabsTrigger value="signup">Sign Up</TabsTrigger>
                   </TabsList>
@@ -56,7 +56,7 @@ const Index = () => {
         </div>
         
         {/* Add className for scrolling target */}
-        <div className="feature-section">
+        <div className="feature-section w-full">
           <FeatureSection />
         </div>
         <AboutSection />

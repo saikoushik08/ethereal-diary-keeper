@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import {
   Settings, 
   User, 
   LogOut, 
-  Menu, 
   X,
   Home 
 } from "lucide-react";
@@ -66,49 +66,41 @@ export const DiaryNav = () => {
           
           <div className="flex items-center">
             <ThemeToggle />
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="ml-2"
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </Button>
+            {isMenuOpen ? (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsMenuOpen(false)}
+                className="ml-2"
+              >
+                <X size={24} />
+              </Button>
+            ) : null}
           </div>
         </div>
         
-        {/* Mobile menu */}
-        {isMenuOpen && (
-          <div className="fixed inset-0 bg-white dark:bg-gray-900 z-10 pt-16 pb-4 px-4 flex flex-col h-full">
-            <nav className="flex-1">
-              <ul className="space-y-2 pt-4">
-                {navItems.map((item) => (
-                  <li key={item.to}>
-                    <Link
-                      to={item.to}
-                      className={`flex items-center p-3 rounded-lg 
-                        ${pathname.startsWith(item.to) 
-                          ? "bg-diary-lavender text-diary-purple dark:bg-purple-900/30 dark:text-purple-300" 
-                          : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                    >
-                      <span className="mr-3">{item.icon}</span>
-                      <span className="font-medium">{item.label}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            
-            <Button 
-              variant="ghost" 
-              className="flex items-center justify-center w-full border-t dark:border-gray-800 pt-4 text-gray-600 dark:text-gray-400" 
-              onClick={handleLogout}
-            >
-              <LogOut size={20} className="mr-2" />
-              <span>Log Out</span>
-            </Button>
-          </div>
-        )}
+        {/* Mobile menu - always visible as a bottom navigation bar */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t dark:border-gray-800 z-20">
+          <nav className="flex justify-around py-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center justify-center p-2 ${
+                  pathname.startsWith(item.to) 
+                    ? "text-diary-purple dark:text-purple-300" 
+                    : "text-gray-600 dark:text-gray-400"
+                }`}
+              >
+                <span>{item.icon}</span>
+                <span className="text-xs mt-1">{item.label}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+        
+        {/* Extra padding at the bottom for the navigation bar */}
+        <div className="pb-16"></div>
       </>
     );
   }

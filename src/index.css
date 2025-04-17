@@ -81,6 +81,16 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-medium;
   }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+/* Hide edit with lovable tag button */
+[id*='gptengineer-edit-button'], .lovable-edit-button, 
+div[data-testid*='gptengineer-controller'] {
+  display: none !important;
 }
 
 /* Dark mode specific styles */
@@ -112,6 +122,20 @@
 
 .dark .bg-green-100 {
   @apply bg-green-900/30;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    width: 100%;
+  }
+  
+  /* Add padding to main content area on mobile when using the bottom nav */
+  .main-content {
+    padding-bottom: 5rem;
+  }
 }
 
 /* Book 3D effect styles */
