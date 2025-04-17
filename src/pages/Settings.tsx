@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
@@ -80,28 +79,21 @@ const Settings = () => {
           fontSize: parsedAppearance.fontSize || prevSettings.fontSize
         }));
         
-        applyTheme(parsedAppearance.theme || 'light');
-        applyFontSize(parsedAppearance.fontSize || 'medium');
+        if (parsedAppearance.theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+        
+        document.documentElement.style.fontSize = 
+          parsedAppearance.fontSize === "small" ? "14px" : 
+          parsedAppearance.fontSize === "large" ? "18px" : 
+          "16px";
       } catch (error) {
         console.error("Error parsing saved appearance:", error);
       }
     }
   }, []);
-
-  const applyTheme = (theme: string) => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
-  const applyFontSize = (size: string) => {
-    document.documentElement.style.fontSize = 
-      size === "small" ? "14px" : 
-      size === "large" ? "18px" : 
-      "16px";
-  };
 
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/" />;
@@ -143,8 +135,16 @@ const Settings = () => {
     try {
       setSaving(true);
       
-      applyTheme(settings.theme);
-      applyFontSize(settings.fontSize);
+      if (settings.theme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      
+      document.documentElement.style.fontSize = 
+        settings.fontSize === "small" ? "14px" : 
+        settings.fontSize === "large" ? "18px" : 
+        "16px";
       
       localStorage.setItem('diary_appearance', JSON.stringify({
         theme: settings.theme,
@@ -289,11 +289,11 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <DiaryNav />
       
       <div className="pl-24 md:pl-24 lg:pl-64 pt-8 pr-4 md:pr-8 pb-8">
-        <h1 className="text-3xl font-serif font-medium mb-6 dark:text-white">Settings</h1>
+        <h1 className="text-3xl font-serif font-medium mb-6">Settings</h1>
         
         <Tabs defaultValue="general">
           <TabsList className="mb-6">
@@ -304,17 +304,17 @@ const Settings = () => {
           </TabsList>
           
           <TabsContent value="general">
-            <Card className="mb-6 dark:bg-gray-800 dark:border-gray-700">
+            <Card className="mb-6">
               <CardHeader>
-                <CardTitle className="dark:text-white">General Settings</CardTitle>
-                <CardDescription className="dark:text-gray-400">Customize your diary experience</CardDescription>
+                <CardTitle>General Settings</CardTitle>
+                <CardDescription>Customize your diary experience</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="auto-save" className="font-medium dark:text-white">Auto-save entries</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Save your entries automatically as you write</p>
+                      <Label htmlFor="auto-save" className="font-medium">Auto-save entries</Label>
+                      <p className="text-sm text-gray-500">Save your entries automatically as you write</p>
                     </div>
                     <Switch 
                       id="auto-save" 
@@ -325,8 +325,8 @@ const Settings = () => {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="notifications" className="font-medium dark:text-white">Reminder notifications</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Get reminders to write in your diary</p>
+                      <Label htmlFor="notifications" className="font-medium">Reminder notifications</Label>
+                      <p className="text-sm text-gray-500">Get reminders to write in your diary</p>
                     </div>
                     <Switch 
                       id="notifications" 
@@ -337,8 +337,8 @@ const Settings = () => {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="ai-analysis" className="font-medium dark:text-white">AI analysis</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Enable AI to analyze your entries and provide insights</p>
+                      <Label htmlFor="ai-analysis" className="font-medium">AI analysis</Label>
+                      <p className="text-sm text-gray-500">Enable AI to analyze your entries and provide insights</p>
                     </div>
                     <Switch 
                       id="ai-analysis" 
@@ -349,15 +349,15 @@ const Settings = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="language" className="font-medium dark:text-white">Language</Label>
+                  <Label htmlFor="language" className="font-medium">Language</Label>
                   <Select 
                     value={settings.language} 
                     onValueChange={(value) => handleSettingChange("language", value)}
                   >
-                    <SelectTrigger id="language" className="mt-1 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                    <SelectTrigger id="language" className="mt-1">
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
-                    <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                    <SelectContent>
                       <SelectItem value="en">English</SelectItem>
                       <SelectItem value="es">Spanish</SelectItem>
                       <SelectItem value="fr">French</SelectItem>
@@ -377,48 +377,48 @@ const Settings = () => {
           </TabsContent>
           
           <TabsContent value="appearance">
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="dark:text-white">Appearance</CardTitle>
-                <CardDescription className="dark:text-gray-400">Customize how your diary looks</CardDescription>
+                <CardTitle>Appearance</CardTitle>
+                <CardDescription>Customize how your diary looks</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label className="font-medium mb-2 block dark:text-white">Theme</Label>
+                  <Label className="font-medium mb-2 block">Theme</Label>
                   <div className="grid grid-cols-2 gap-4">
                     <Button 
                       variant="outline" 
-                      className={`h-auto p-4 flex flex-col items-center ${settings.theme === "light" ? "border-diary-purple ring-2 ring-diary-purple/50" : "bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"}`}
+                      className={`h-auto p-4 flex flex-col items-center ${settings.theme === "light" ? "border-diary-purple ring-2 ring-diary-purple/50" : "bg-white"}`}
                       onClick={() => handleSettingChange("theme", "light")}
                     >
-                      <div className="w-full h-24 bg-white border rounded-md mb-2 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                      <div className="w-full h-24 bg-white border rounded-md mb-2 flex items-center justify-center">
                         Light
                       </div>
-                      <span className="dark:text-white">Light Mode</span>
+                      <span>Light Mode</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className={`h-auto p-4 flex flex-col items-center ${settings.theme === "dark" ? "border-diary-purple ring-2 ring-diary-purple/50" : "dark:bg-gray-700 dark:text-white dark:border-gray-600"}`}
+                      className={`h-auto p-4 flex flex-col items-center ${settings.theme === "dark" ? "border-diary-purple ring-2 ring-diary-purple/50" : ""}`}
                       onClick={() => handleSettingChange("theme", "dark")}
                     >
-                      <div className="w-full h-24 bg-diary-dark border rounded-md mb-2 flex items-center justify-center text-white dark:bg-gray-900 dark:border-gray-700">
+                      <div className="w-full h-24 bg-diary-dark border rounded-md mb-2 flex items-center justify-center text-white">
                         Dark
                       </div>
-                      <span className="dark:text-white">Dark Mode</span>
+                      <span>Dark Mode</span>
                     </Button>
                   </div>
                 </div>
                 
                 <div>
-                  <Label htmlFor="font-size" className="font-medium dark:text-white">Font Size</Label>
+                  <Label htmlFor="font-size" className="font-medium">Font Size</Label>
                   <Select 
                     value={settings.fontSize} 
                     onValueChange={(value) => handleSettingChange("fontSize", value)}
                   >
-                    <SelectTrigger id="font-size" className="mt-1 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                    <SelectTrigger id="font-size" className="mt-1">
                       <SelectValue placeholder="Select font size" />
                     </SelectTrigger>
-                    <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                    <SelectContent>
                       <SelectItem value="small">Small</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="large">Large</SelectItem>
@@ -446,7 +446,7 @@ const Settings = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="encryption" className="font-medium">End-to-end encryption</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Encrypt your diary entries for maximum privacy</p>
+                      <p className="text-sm text-gray-500">Encrypt your diary entries for maximum privacy</p>
                     </div>
                     <Switch 
                       id="encryption" 
@@ -458,7 +458,7 @@ const Settings = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="biometric" className="font-medium">Biometric authentication</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Use fingerprint or face ID to access your diary</p>
+                      <p className="text-sm text-gray-500">Use fingerprint or face ID to access your diary</p>
                     </div>
                     <Switch 
                       id="biometric" 

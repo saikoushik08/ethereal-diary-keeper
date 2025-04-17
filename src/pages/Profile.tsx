@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
@@ -13,9 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
-  const { user, profile, isAuthenticated, isLoading, updateUserProfile } = useAuth();
+  const { user, profile, isAuthenticated, isLoading } = useAuth();
   const [username, setUsername] = useState(profile?.username || "");
-  const [bio, setBio] = useState(profile?.bio || "");
+  const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -30,11 +31,9 @@ const Profile = () => {
     return <Navigate to="/" />;
   }
 
-  // Update local state when profile changes
   useEffect(() => {
     if (profile) {
       setUsername(profile.username || "");
-      setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url || null);
     }
   }, [profile]);
@@ -55,12 +54,10 @@ const Profile = () => {
 
       if (!user) throw new Error("User not authenticated");
 
-      // Create a unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-      
       // Upload file to storage
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+      
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
@@ -72,12 +69,13 @@ const Profile = () => {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      console.log("Avatar uploaded successfully, URL:", data.publicUrl);
-
       // Update profile with new avatar URL
-      await updateUserProfile({
-        avatar_url: data.publicUrl
-      });
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: data.publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
 
       setAvatarUrl(data.publicUrl);
       
@@ -155,10 +153,15 @@ const Profile = () => {
     try {
       setSaving(true);
       
-      await updateUserProfile({
-        username,
-        bio,
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username,
+          bio
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
       
       toast({
         title: "Profile updated",
