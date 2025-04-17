@@ -10,7 +10,6 @@ import {
   Settings, 
   User, 
   LogOut, 
-  X,
   Home 
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -66,16 +65,6 @@ export const DiaryNav = () => {
           
           <div className="flex items-center">
             <ThemeToggle />
-            {isMenuOpen ? (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setIsMenuOpen(false)}
-                className="ml-2"
-              >
-                <X size={24} />
-              </Button>
-            ) : null}
           </div>
         </div>
         
