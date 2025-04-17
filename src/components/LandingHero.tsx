@@ -6,8 +6,7 @@ import { SignupForm } from "./SignupForm";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronDown } from "lucide-react";
 
-// Update the interface to include the required onScrollDown prop
-export interface LandingHeroProps {
+interface LandingHeroProps {
   onScrollDown: () => void;
 }
 
