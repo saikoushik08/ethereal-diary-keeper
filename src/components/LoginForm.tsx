@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { AlertCircle } from "lucide-react";
-import { FaSpinner } from "react-icons/fa";  // Import spinner icon
+import { FaSpinner, FaEye, FaEyeSlash } from "react-icons/fa"; // Eye icons for password visibility toggle
 
 // Email validation regex
 const validateEmail = (email: string) => {
@@ -27,9 +27,27 @@ export const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // For toggling password visibility
+  const [emailValid, setEmailValid] = useState(true); // Email validation state
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Check email validity
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const emailValue = e.target.value;
+    setEmail(emailValue);
+    setEmailValid(validateEmail(emailValue)); // Validate email on the fly
+  };
+
+  // Password strength indicator logic
+  const checkPasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    return strength;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +88,9 @@ export const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <ErrorAlert message={error} />}  {/* Use the ErrorAlert component */}
+      {error && <ErrorAlert message={error} />} {/* Use the ErrorAlert component */}
+
+      {/* Email Field */}
       <div className="space-y-2 text-black">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -78,25 +98,45 @@ export const LoginForm = () => {
           type="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
           required
+          className={!emailValid ? 'border-red-500' : ''}
         />
+        {!emailValid && <p className="text-red-500">Invalid email format.</p>}
       </div>
+
+      {/* Password Field */}
       <div className="space-y-2 text-black">
         <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={isPasswordVisible ? "text" : "password"}
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setIsPasswordVisible((prev) => !prev)}
+            className="absolute top-1/2 right-3 transform -translate-y-1/2"
+          >
+            {isPasswordVisible ? <FaEyeSlash /> : <FaEye />}
+          </button>
+        </div>
       </div>
+
+      {/* Password Strength Indicator */}
+      <div className="text-sm">
+        <p className={`text-red-500`}>Password Strength: {checkPasswordStrength(password)} / 3</p>
+      </div>
+
+      {/* Submit Button */}
       <Button
         type="submit"
         className="w-full bg-diary-purple hover:bg-diary-purple/90"
-        disabled={isLoading}
+        disabled={isLoading || !emailValid || password.length < 8}
       >
         {isLoading ? (
           <FaSpinner className="animate-spin h-5 w-5 mr-2" />
