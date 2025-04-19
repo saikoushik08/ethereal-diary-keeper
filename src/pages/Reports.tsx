@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, XCircle, LineChart, PieChart, BarChart2, CalendarDays, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { format, startOfWeek, endOfWeek, subWeeks, eachDayOfInterval } from "date-fns";
 
 interface WeeklyReport {

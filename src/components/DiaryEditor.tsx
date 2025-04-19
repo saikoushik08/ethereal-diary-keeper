@@ -18,10 +18,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Json } from "@/integrations/supabase/types";
+import { Json } from "@/lib/supabase/types";
 
 interface Todo {
   text: string;

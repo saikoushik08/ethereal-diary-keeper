@@ -4,81 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
-import { AlertCircle } from "lucide-react";
-import { FaSpinner, FaEye, FaEyeSlash } from "react-icons/fa"; // Eye icons for password visibility toggle
-
-// Email validation regex
-const validateEmail = (email: string) => {
-  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return re.test(email);
-};
-
-// Error alert component
-const ErrorAlert = ({ message }: { message: string }) => (
-  <div className="bg-red-50 p-3 rounded-md flex items-start text-sm">
-    <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-    <span className="text-red-800">{message}</span>
-  </div>
-);
+import { AlertCircle, Github, Mail, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
 
 export const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // For toggling password visibility
-  const [emailValid, setEmailValid] = useState(true); // Email validation state
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login } = useAuth();
 
-  // Check email validity
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const emailValue = e.target.value;
-    setEmail(emailValue);
-    setEmailValid(validateEmail(emailValue)); // Validate email on the fly
-  };
-
-  // Password strength indicator logic
-  const checkPasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    return strength;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
-
-    // Validate email format
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address.");
-      setIsLoading(false);
-      return;
-    }
+    setIsLoading(true);
 
     try {
-      await login(email, password);
-      toast({
-        title: "Login successful",
-        description: "Welcome back to your diary!",
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (error) throw error;
+
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully signed in.",
+      });
+
       navigate("/dashboard");
     } catch (error: any) {
-      if (error.message.includes("invalid_email")) {
-        setError("The email address is not registered.");
-      } else if (error.message.includes("incorrect_password")) {
-        setError("The password you entered is incorrect.");
-      } else {
-        setError(error.message || "Failed to log in. Please check your credentials.");
-      }
+      setError(error.message || "Login failed");
       toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        title: "Login error",
+        description: error.message || "Login failed",
         variant: "destructive",
       });
     } finally {
@@ -86,64 +46,99 @@ export const LoginForm = () => {
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <ErrorAlert message={error} />} {/* Use the ErrorAlert component */}
+  const handleOAuthLogin = async (provider: "google" | "github") => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
 
-      {/* Email Field */}
-      <div className="space-y-2 text-black">
-        <Label htmlFor="email">Email</Label>
+    if (error) {
+      toast({
+        title: `Login with ${provider} failed`,
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin} className="space-y-4 bg-[#001a3a] text-white p-6 rounded-lg">
+      {error && (
+        <div className="bg-red-900/20 p-3 rounded-md flex items-start text-sm text-red-300">
+          <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="email" className="text-white">Email</Label>
         <Input
           id="email"
           type="email"
           placeholder="you@example.com"
           value={email}
-          onChange={handleEmailChange}
+          onChange={(e) => setEmail(e.target.value)}
           required
-          className={!emailValid ? 'border-red-500' : ''}
+          className="bg-black text-white border border-gray-300 focus:ring-2 focus:ring-diary-purple rounded-lg px-4 py-2"
         />
-        {!emailValid && <p className="text-red-500">Invalid email format.</p>}
       </div>
 
-      {/* Password Field */}
-      <div className="space-y-2 text-black">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
-          <Input
-            id="password"
-            type={isPasswordVisible ? "text" : "password"}
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setIsPasswordVisible((prev) => !prev)}
-            className="absolute top-1/2 right-3 transform -translate-y-1/2"
-          >
-            {isPasswordVisible ? <FaEyeSlash /> : <FaEye />}
-          </button>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="password" className="text-white">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="bg-black text-white border border-gray-300 focus:ring-2 focus:ring-diary-purple rounded-lg px-4 py-2"
+        />
       </div>
 
-      {/* Password Strength Indicator */}
-      <div className="text-sm">
-        <p className={`text-red-500`}>Password Strength: {checkPasswordStrength(password)} / 3</p>
-      </div>
-
-      {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full bg-diary-purple hover:bg-diary-purple/90"
-        disabled={isLoading || !emailValid || password.length < 8}
+        className="w-full bg-diary-purple hover:bg-diary-purple/90 text-white"
+        disabled={isLoading}
       >
         {isLoading ? (
-          <FaSpinner className="animate-spin h-5 w-5 mr-2" />
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Logging in...
+          </span>
         ) : (
-          "Login"
+          "Log In"
         )}
       </Button>
+
+      <div className="flex items-center justify-center gap-2 mt-4">
+        <div className="h-px bg-gray-300 w-1/3" />
+        <span className="text-sm text-gray-500">or</span>
+        <div className="h-px bg-gray-300 w-1/3" />
+      </div>
+
+      <div className="space-y-2">
+        <Button
+          type="button"
+          onClick={() => handleOAuthLogin("google")}
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2 text-black"
+        >
+          <Mail className="w-5 h-5" />
+          Continue with Google
+        </Button>
+        <Button
+          type="button"
+          onClick={() => handleOAuthLogin("github")}
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2 text-black"
+        >
+          <Github className="w-5 h-5" />
+          Continue with GitHub
+        </Button>
+      </div>
     </form>
   );
 };

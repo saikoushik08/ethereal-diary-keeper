@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LoginForm } from "./LoginForm";
@@ -60,7 +59,7 @@ export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
           showAuth ? "opacity-100 z-20" : "opacity-0 pointer-events-none -z-10"
         }`}
       >
-        <div className="bg-white/90 backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-xl w-[90%] max-w-sm md:max-w-md animate-fade-in">
+        <div className="bg-[#001a3a] backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-xl w-[90%] max-w-sm md:max-w-md animate-fade-in">
           <div className="flex justify-between mb-6 md:mb-8">
             <button
               className={`text-base md:text-lg font-medium pb-2 px-2 md:px-4 ${
@@ -84,6 +83,7 @@ export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
             </button>
           </div>
 
+          {/* Conditional Rendering of Login and Signup Forms */}
           {showLogin ? <LoginForm /> : <SignupForm />}
 
           <Button variant="outline" className="mt-4 w-full text-black" onClick={() => setShowAuth(false)}>
@@ -94,9 +94,9 @@ export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
 
       {/* Scroll Down Indicator */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="rounded-full bg-white/10 hover:bg-white/20"
           onClick={onScrollDown}
         >
