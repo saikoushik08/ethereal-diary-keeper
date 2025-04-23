@@ -144,7 +144,7 @@ const Index = () => {
       {/* Auth Modal */}
       {showAuth && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white/90 backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-xl w-[90%] max-w-sm md:max-w-md animate-fade-in">
+          <div className="bg-[#001a3a] backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-xl w-[90%] max-w-sm md:max-w-md animate-fade-in">
             <div className="flex justify-between mb-6 md:mb-8">
               <button
                 className={`text-base md:text-lg font-medium pb-2 px-2 md:px-4 ${
