@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 
 interface UserProfile {
+  bio: string;
   id: string;
   username: string;
   avatar_url?: string;
