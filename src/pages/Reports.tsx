@@ -135,7 +135,7 @@ const Reports = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background dark:bg-[#111827] text-foreground dark:text-white">
       <DiaryNav />
       
       <div className="pl-24 md:pl-24 lg:pl-64 pt-8 pr-4 md:pr-8 pb-8">
@@ -252,7 +252,7 @@ const Reports = () => {
             </Card>
             
             <h2 className="text-2xl font-serif font-medium mb-4">Previous Weeks</h2>
-            <div className="space-y-4">
+            <div className="space-y-4 ">
               {loading ? (
                 <>
                   {[1, 2, 3].map(i => (
@@ -265,7 +265,7 @@ const Reports = () => {
               ) : (
                 <>
                   {weeklyReports.map((report) => (
-                    <Collapsible key={report.id} className="bg-white rounded-lg shadow-sm border border-gray-100">
+                    <Collapsible key={report.id} className="bg-white rounded-lg shadow-sm border border-gray-100 dark:bg-[#111827]">
                       <CollapsibleTrigger className="w-full p-4 flex items-center justify-between">
                         <div className="text-left">
                           <h3 className="text-lg font-medium">{report.dateRange}</h3>
