@@ -81,7 +81,7 @@ const DiaryEntry = () => {
     : "pl-24 md:pl-24 lg:pl-64 pt-8 pr-4 md:pr-8 pb-8";
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[#111827]">
       <DiaryNav />
       
       <div className={contentClass}>
@@ -96,7 +96,7 @@ const DiaryEntry = () => {
               <h1 className="text-2xl md:text-3xl font-serif font-medium">New Entry</h1>
             </div>
             
-            <div className="bg-white p-3 md:p-6 rounded-lg shadow-sm">
+            <div className="bg-white p-3 md:p-6 rounded-lg shadow-sm dark:bg-[#111827]">
               <DiaryEditor existingEntry={null} />
             </div>
           </>
@@ -113,7 +113,7 @@ const DiaryEntry = () => {
               </h1>
             </div>
             
-            <div className="bg-white p-3 md:p-6 rounded-lg shadow-sm">
+            <div className="bg-white p-3 md:p-6 rounded-lg shadow-sm dark:bg-[#020817] ">
               {entry ? (
                 <DiaryEditor existingEntry={entry} />
               ) : (
