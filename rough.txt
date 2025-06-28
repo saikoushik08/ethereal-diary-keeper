@@ -346,3 +346,4 @@ export const DiaryEditor = ({ existingEntry }: DiaryEditorProps) => {
     </div>
   );
 };
+// this is correct code
