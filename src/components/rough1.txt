@@ -1,213 +1,314 @@
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import {
-  BookText,
-  BarChart,
-  Settings as SettingsIcon,
-  LogOut,
-  User,
-  Search,
-  Home,
-  MessageSquare,
-  Menu,
-  X,
-} from "lucide-react";
-import { useState, useEffect } from "react";
+import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, CalendarDays, BookOpen, ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import {
+  startOfMonth, endOfMonth, eachDayOfInterval, format,
+  getMonth, getYear, subMonths, addMonths, isSameDay,
+  startOfWeek, endOfWeek, eachWeekOfInterval, isSameMonth
+} from "date-fns";
+import clsx from "clsx";
 
-export const DiaryNav = () => {
-  const location = useLocation();
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+interface Entry {
+  id: string;
+  title: string;
+  content: string;
+  mood: string;
+  tags: string[];
+  created_at: string;
+}
+
+const DiaryList = () => {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const isMobile = useIsMobile();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Automatically collapse sidebar on mobile
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [view, setView] = useState<"entries" | "calendar">("entries");
+
+  const [monthDate, setMonthDate] = useState(new Date());
+  const month = getMonth(monthDate);
+  const year = getYear(monthDate);
+
+  const [notes, setNotes] = useState<string[]>([]);
+  const [noteId, setNoteId] = useState<string | null>(null);
+  const [notesInitialized, setNotesInitialized] = useState(false);
+
+  const [expandedWeeks, setExpandedWeeks] = useState<number[]>([]);
+
   useEffect(() => {
-    if (isMobile) {
-      setCollapsed(true);
-    }
-  }, [isMobile]);
+    if (!isLoading && !isAuthenticated) return;
 
-  // Close mobile menu when navigating
+    const fetchEntries = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("entries")
+          .select("*")
+          .eq("user_id", user!.id)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        setEntries(data as Entry[]);
+      } catch (e) {
+        console.error(e);
+        toast({ title: "Error", description: "Could not load entries", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEntries();
+  }, [isLoading, isAuthenticated, user, toast]);
+
   useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
+    const loadNotes = async () => {
+      if (!user) return;
 
-  const navItems = [
-    { path: "/dashboard", label: "Dashboard", icon: <Home size={20} /> },
-    { path: "/diary", label: "Daily Entries", icon: <BookText size={20} /> },
-    { path: "/reports", label: "AI Reports", icon: <BarChart size={20} /> },
-    { path: "/explore", label: "Explore", icon: <Search size={20} /> },
-    { path: "/chat", label: "Contact Us", icon: <MessageSquare size={20} /> },
-    { path: "/settings", label: "Settings", icon: <SettingsIcon size={20} /> },
-    { path: "/profile", label: "Profile", icon: <User size={20} /> },
-  ];
+      const res = await supabase
+        .from("monthly_notes")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("month", month)
+        .eq("year", year)
+        .limit(1);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+      const note = res.data?.[0] || null;
+
+      if (res.error) {
+        toast({ title: "Error", description: "Could not load notes", variant: "destructive" });
+      } else if (note) {
+        setNoteId(note.id);
+        setNotes(note.notes || []);
+      } else {
+        setNoteId(null);
+        setNotes([]);
+      }
+
+      setNotesInitialized(true);
+    };
+
+    loadNotes();
+  }, [month, year, user, toast]);
+
+  useEffect(() => {
+    if (!user || !notesInitialized) return;
+
+    const saveNotes = async () => {
+      if (noteId) {
+        const { error } = await supabase
+          .from("monthly_notes")
+          .update({ notes })
+          .eq("id", noteId);
+
+        if (error) console.error("Update error:", error);
+      } else if (notes.length > 0) {
+        const res = await supabase
+          .from("monthly_notes")
+          .insert([{ user_id: user.id, year, month, notes }])
+          .select()
+          .limit(1);
+
+        const inserted = res.data?.[0];
+
+        if (res.error) console.error("Insert error:", res.error);
+        else if (inserted?.id) setNoteId(inserted.id);
+      }
+    };
+
+    saveNotes();
+  }, [notes, user, noteId, notesInitialized, month, year]);
+
+  if (!isLoading && !isAuthenticated) return <Navigate to="/" />;
+
+  const filtered = entries.filter(e =>
+    e.title.toLowerCase().includes(searchQuery) ||
+    e.content.toLowerCase().includes(searchQuery) ||
+    e.tags.some(t => t.toLowerCase().includes(searchQuery))
+  );
+
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(monthDate),
+    end: endOfMonth(monthDate)
+  });
+
+  const weeks = eachWeekOfInterval({
+    start: startOfMonth(monthDate),
+    end: endOfMonth(monthDate)
+  }, { weekStartsOn: 1 });
+
+  const toggleWeek = (index: number) => {
+    setExpandedWeeks(prev =>
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    );
   };
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  const contentClass = isMobile ? "pt-20 px-4 pb-8 w-full" : "pl-24 lg:pl-64 pt-8 pr-8 pb-8";
 
   return (
-    <>
-      {/* Mobile Header */}
-      <div
-        className="
-          md:hidden fixed top-0 left-0 right-0 h-16
-          bg-background dark:bg-[#111827]
-          border-b border-border
-          flex items-center justify-between px-4 z-40
-        "
-      >
-        <div className="text-2xl font-serif font-bold text-primary dark:text-white">
-          <span>Dear</span>
-          <span className="text-primary-foreground dark:text-white">Diary</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleMobileMenu}
-          className="text-foreground dark:text-white"
-        >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </Button>
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      {isMobile && (
-        <div
-          className={`
-            fixed inset-0 bg-black/50 z-30 transition-opacity duration-300
-            ${mobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
-          `}
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={`
-          fixed h-screen
-          ${collapsed ? "w-20" : "w-64"}
-          bg-background dark:bg-[#111827]
-          border-r border-border
-          transition-all duration-300 ease-in-out z-30
-          ${isMobile
-            ? mobileMenuOpen
-              ? "translate-x-0"
-              : "-translate-x-full"
-            : "translate-x-0"}
-          top-0
-        `}
-      >
-        <div className="p-4 flex items-center justify-between border-b border-border">
-          {!collapsed && (
-            <div className="text-2xl font-serif font-bold text-primary dark:text-white">
-              <span>Dear</span>
-              <span className="text-primary-foreground dark:text-white">
-                Diary
-              </span>
-            </div>
-          )}
-
-          {/* Collapse Toggle */}
-          <Button
-              variant="ghost"
-              size="icon"
-               className={`
-                  h-10 w-10
-                  flex items-center justify-center
-                  text-foreground dark:text-white
-                  hover:bg-accent hover:text-accent-foreground
-                  transition duration-200
-                  ml-auto
-                `}
-                onClick={() => setCollapsed(!collapsed)}
-          >
-
-            {collapsed ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-chevron-right"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-chevron-left"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            )}
-          </Button>
+    <div className="min-h-screen bg-background dark:bg-[#111827] text-foreground dark:text-white">
+      <DiaryNav />
+      <div className={contentClass}>
+        <div className="text-center mb-4">
+          <h1 className="text-3xl font-serif font-bold">Diary Entries</h1>
+          <h2 className="text-2xl font-semibold mt-2">{format(monthDate, "MMMM yyyy")}</h2>
         </div>
 
-        <nav className="p-4 mt-4 md:mt-0">
-          <ul className="space-y-2">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <Link to={item.path}>
-                  <Button
-                    variant={location.pathname === item.path ? "secondary" : "ghost"}
-                    className={`
-                      w-full justify-start
-                      ${
-                        location.pathname === item.path
-                          ? "bg-diary-lavender dark:bg-diary-gray text-diary-purple dark:text-white"
-                          : "text-foreground dark:text-white"
-                      }
-                    `}
-                  >
-                    <span className={`${!collapsed || isMobile ? "mr-2" : ""}`}>
-                      {item.icon}
-                    </span>
-                    {(!collapsed || (isMobile && mobileMenuOpen)) && (
-                      <span>{item.label}</span>
-                    )}
-                  </Button>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="absolute bottom-8 left-0 right-0 px-4">
-          <Button
-            variant="outline"
-            className="w-full justify-start text-destructive dark:text-white dark:border-white hover:bg-destructive/10"
-            onClick={handleLogout}
-          >
-            <LogOut
-              size={20}
-              className={`${!collapsed || isMobile ? "mr-2" : ""}`}
+        <div className="flex flex-col md:flex-row md:justify-between mb-6">
+          <div className="flex gap-3 flex-wrap justify-center md:justify-end w-full">
+            <Input
+              className="w-48"
+              placeholder="Search…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value.toLowerCase())}
             />
-            {(!collapsed || (isMobile && mobileMenuOpen)) && <span>Logout</span>}
-          </Button>
+            <Button variant={view === "entries" ? "default" : "outline"} onClick={() => setView("entries")}> <BookOpen className="mr-2" size={18} /> Entries </Button>
+            <Button variant={view === "calendar" ? "default" : "outline"} onClick={() => setView("calendar")}> <CalendarDays className="mr-2" size={18} /> Calendar </Button>
+            <Link to="/diary/new">
+              <Button><PlusCircle className="mr-2" />New Entry</Button>
+            </Link>
+          </div>
         </div>
+
+        {view === "entries" ? (
+          loading ? <p>Loading…</p> : (
+            <div className="space-y-6">
+              {weeks.map((startOfWk, index) => {
+                const endOfWk = endOfWeek(startOfWk, { weekStartsOn: 1 });
+                const weekDays = eachDayOfInterval({ start: startOfWk, end: endOfWk })
+                  .filter(day => isSameMonth(day, monthDate));
+                const weekEntries = filtered.filter(e =>
+                  weekDays.some(day => isSameDay(new Date(e.created_at), day))
+                );
+                return (
+                  <div key={index} className="border rounded-lg bg-white dark:bg-card">
+                    <div
+                      className="cursor-pointer p-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-800"
+                      onClick={() => toggleWeek(index)}
+                    >
+                      <span className="font-semibold">Week {index + 1} ({format(weekDays[0], "MMM d")} – {format(weekDays[weekDays.length - 1], "MMM d")})</span>
+                      {expandedWeeks.includes(index) ? <ChevronUp /> : <ChevronDown />}
+                    </div>
+                    {expandedWeeks.includes(index) && (
+                      <div className="p-4">
+                        <div className="flex gap-2 flex-wrap justify-center mb-4">
+                          {weekDays.map(day => {
+                            const hasEntry = entries.some(e => isSameDay(new Date(e.created_at), day));
+                            return (
+                              <button
+                                key={day.toISOString()}
+                                className={clsx(
+                                  "w-10 h-10 flex items-center justify-center rounded-full border text-sm",
+                                  hasEntry ? "bg-green-300 hover:bg-green-400" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                                )}
+                                onClick={() => {
+                                  const entry = entries.find(e => isSameDay(new Date(e.created_at), day));
+                                  if (entry) navigate(`/diary/${entry.id}`);
+                                }}
+                              >
+                                {format(day, "d")}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {weekEntries.map(e => (
+                            <div
+                              key={e.id}
+                              className="border rounded-lg p-4 bg-white dark:bg-background cursor-pointer hover:shadow"
+                              onClick={() => navigate(`/diary/${e.id}`)}
+                            >
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{format(new Date(e.created_at), "dd MMM, hh:mm a")}</div>
+                              <div className="font-bold text-lg">{e.title}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          <div className="bg-white dark:bg-card rounded-lg p-6 border">
+            <div className="flex justify-between items-center mb-4">
+              <Button variant="ghost" onClick={() => setMonthDate(subMonths(monthDate, 1))}>
+                <ChevronsLeft size={20} />
+              </Button>
+              <h2 className="text-2xl font-serif font-medium">{format(monthDate, "MMMM yyyy")}</h2>
+              <Button variant="ghost" onClick={() => setMonthDate(addMonths(monthDate, 1))}>
+                <ChevronsRight size={20} />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2 text-center text-sm mb-4">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                <div key={day} className="font-medium">{day}</div>
+              ))}
+              {Array.from({ length: new Date(year, month, 1).getDay() - 1 }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {daysInMonth.map(day => {
+                const hasEntry = entries.some(e => isSameDay(new Date(e.created_at), day));
+                return (
+                  <div
+                    key={day.toISOString()}
+                    onClick={() => {
+                      const entry = entries.find(e => isSameDay(new Date(e.created_at), day));
+                      if (entry) navigate(`/diary/${entry.id}`);
+                    }}
+                    className={clsx(
+                      "rounded-full border p-2 cursor-pointer",
+                      hasEntry ? "bg-green-300 hover:bg-green-400" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    {format(day, "d")}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 border-t pt-4">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-xl font-semibold">Notes</h3>
+                <Button size="sm" variant="secondary" onClick={() => setNotes([...notes, ""])}>+ Add</Button>
+              </div>
+              <div className="space-y-3">
+                {notes.map((note, i) => (
+                  <div key={i} className="flex gap-2 items-start">
+                    <textarea
+                      className="w-full p-2 border rounded resize-none bg-background text-foreground"
+                      rows={2}
+                      value={note}
+                      onChange={(e) => {
+                        const updated = [...notes];
+                        updated[i] = e.target.value;
+                        setNotes(updated);
+                      }}
+                    />
+                    <Button size="icon" variant="destructive" onClick={() => {
+                      const updated = [...notes];
+                      updated.splice(i, 1);
+                      setNotes(updated);
+                    }}>×</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
+
+export default DiaryList;

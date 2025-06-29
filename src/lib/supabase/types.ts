@@ -45,6 +45,7 @@ export type Database = {
         }
         Relationships: []
       }
+
       profiles: {
         Row: {
           avatar_url: string | null
@@ -69,16 +70,51 @@ export type Database = {
         }
         Relationships: []
       }
+
+      monthly_notes: {
+        Row: {
+          id: string
+          user_id: string
+          month: number
+          year: number
+          notes: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          month: number
+          year: number
+          notes: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          month?: number
+          year?: number
+          notes?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
+
     Views: {
       [_ in never]: never
     }
+
     Functions: {
       [_ in never]: never
     }
+
     Enums: {
       [_ in never]: never
     }
+
     CompositeTypes: {
       [_ in never]: never
     }
