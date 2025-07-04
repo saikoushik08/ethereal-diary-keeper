@@ -86,7 +86,7 @@ export const LandingHero = ({ onScrollDown }: LandingHeroProps) => {
           {/* Conditional Rendering of Login and Signup Forms */}
           {showLogin ? <LoginForm /> : <SignupForm />}
 
-          <Button variant="outline" className="mt-4 w-full text-black" onClick={() => setShowAuth(false)}>
+          <Button variant="outline" className="mt-4 w-full text-white" onClick={() => setShowAuth(false)}>
             Back to Home
           </Button>
         </div>
