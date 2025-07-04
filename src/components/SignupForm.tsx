@@ -186,7 +186,7 @@ export const SignupForm = () => {
           type="button"
           onClick={() => signInWithProvider("google")}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 text-black"
+         className="w-full flex items-center justify-center gap-2 bg-[#020817] text-white"
         >
           <FaGoogle className="w-5 h-5" />
           Continue with Google
@@ -196,7 +196,7 @@ export const SignupForm = () => {
           type="button"
           onClick={() => signInWithProvider("github")}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 text-black"
+         className="w-full flex items-center justify-center gap-2 bg-[#020817] text-white"
         >
           <Github className="w-5 h-5" />
           Continue with GitHub
