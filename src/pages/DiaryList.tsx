@@ -63,7 +63,6 @@ const DiaryList = () => {
 
   const [expandedWeeks, setExpandedWeeks] = useState<number[]>([]);
 
-  // Fetch diary entries
   useEffect(() => {
     if (!isLoading && !isAuthenticated) return;
 
@@ -79,7 +78,11 @@ const DiaryList = () => {
         setEntries(data as Entry[]);
       } catch (e) {
         console.error(e);
-        toast({ title: "Error", description: "Could not load entries", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Could not load entries",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -88,11 +91,9 @@ const DiaryList = () => {
     fetchEntries();
   }, [isLoading, isAuthenticated, user, toast]);
 
-  // Load notes for the current month
   useEffect(() => {
     const loadNotes = async () => {
       if (!user) return;
-
       const res = await supabase
         .from("monthly_notes")
         .select("*")
@@ -100,11 +101,13 @@ const DiaryList = () => {
         .eq("month", month)
         .eq("year", year)
         .limit(1);
-
       const note = res.data?.[0] || null;
-
       if (res.error) {
-        toast({ title: "Error", description: "Could not load notes", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Could not load notes",
+          variant: "destructive",
+        });
       } else if (note) {
         setNoteId(note.id);
         setNotes(note.notes || []);
@@ -112,17 +115,14 @@ const DiaryList = () => {
         setNoteId(null);
         setNotes([]);
       }
-
       setNotesInitialized(true);
     };
 
     loadNotes();
   }, [month, year, user, toast]);
 
-  // Save notes whenever they change
   useEffect(() => {
     if (!user || !notesInitialized) return;
-
     const saveNotes = async () => {
       if (noteId) {
         const { error } = await supabase
@@ -136,29 +136,28 @@ const DiaryList = () => {
           .insert([{ user_id: user.id, year, month, notes }])
           .select()
           .limit(1);
-
         const inserted = res.data?.[0];
         if (res.error) console.error("Insert error:", res.error);
         else if (inserted?.id) setNoteId(inserted.id);
       }
     };
-
     saveNotes();
   }, [notes, user, noteId, notesInitialized, month, year]);
 
   if (!isLoading && !isAuthenticated) return <Navigate to="/" />;
 
-  const filtered = entries.filter((e) =>
-    e.title.toLowerCase().includes(searchQuery) ||
-    e.content.toLowerCase().includes(searchQuery) ||
-    e.tags.some((t) => t.toLowerCase().includes(searchQuery))
+  const filtered = entries.filter(
+    (e) =>
+      e.title.toLowerCase().includes(searchQuery) ||
+      e.content.toLowerCase().includes(searchQuery) ||
+      e.tags.some((t) => t.toLowerCase().includes(searchQuery))
   );
 
-  // Compute days and weeks of current month
   const daysInMonth = eachDayOfInterval({
     start: startOfMonth(monthDate),
     end: endOfMonth(monthDate),
   });
+
   const weeks = eachWeekOfInterval(
     { start: startOfMonth(monthDate), end: endOfMonth(monthDate) },
     { weekStartsOn: 1 }
@@ -178,13 +177,13 @@ const DiaryList = () => {
     <div className="min-h-screen bg-background dark:bg-[#111827] text-foreground dark:text-white">
       <DiaryNav />
       <div className={contentClass}>
-        {/* Header */}
         <div className="text-center mb-4">
           <h1 className="text-3xl font-serif font-bold">Diary Entries</h1>
-          <h2 className="text-2xl font-semibold mt-2">{format(monthDate, "MMMM yyyy")}</h2>
+          <h2 className="text-2xl font-semibold mt-2">
+            {format(monthDate, "MMMM yyyy")}
+          </h2>
         </div>
 
-        {/* Controls */}
         <div className="flex flex-col md:flex-row md:justify-between mb-6">
           <div className="flex gap-3 flex-wrap justify-center md:justify-end w-full">
             <Input
@@ -213,7 +212,6 @@ const DiaryList = () => {
           </div>
         </div>
 
-        {/* Entries View */}
         {view === "entries" ? (
           loading ? (
             <p>Loading…</p>
@@ -221,31 +219,37 @@ const DiaryList = () => {
             <div className="space-y-6">
               {weeks.map((startOfWk, index) => {
                 const endOfWk = endOfWeek(startOfWk, { weekStartsOn: 1 });
-                const weekDays = eachDayOfInterval({ start: startOfWk, end: endOfWk }).filter((day) =>
-                  isSameMonth(day, monthDate)
-                );
+                const weekDays = eachDayOfInterval({
+                  start: startOfWk,
+                  end: endOfWk,
+                });
                 const weekEntries = filtered.filter((e) =>
                   weekDays.some((day) => isSameDay(new Date(e.created_at), day))
                 );
+
                 return (
-                  <div key={index} className="border rounded-lg bg-white dark:bg-card">
-                    {/* Week Header */}
+                  <div
+                    key={index}
+                    className="border rounded-lg bg-white dark:bg-card"
+                  >
                     <div
                       className="cursor-pointer p-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-800"
                       onClick={() => toggleWeek(index)}
                     >
                       <span className="font-semibold">
-                        Week {index + 1} (
-                        {format(weekDays[0], "MMM d")} – {format(weekDays[weekDays.length - 1], "MMM d")})
+                        Week {index + 1} ({format(weekDays[0], "MMM d")} –{" "}
+                        {format(weekDays[weekDays.length - 1], "MMM d")})
                         &nbsp;[{weekEntries.length}/{weekDays.length}]
                       </span>
-                      {expandedWeeks.includes(index) ? <ChevronUp /> : <ChevronDown />}
+                      {expandedWeeks.includes(index) ? (
+                        <ChevronUp />
+                      ) : (
+                        <ChevronDown />
+                      )}
                     </div>
 
-                    {/* Expanded Content */}
                     {expandedWeeks.includes(index) && (
                       <div className="p-4">
-                        {/* Date Circles */}
                         <div className="flex gap-2 flex-wrap justify-center mb-4">
                           {weekDays.map((day) => {
                             const hasEntry = entries.some((e) =>
@@ -256,6 +260,9 @@ const DiaryList = () => {
                                 key={day.toISOString()}
                                 className={clsx(
                                   "w-10 h-10 flex items-center justify-center rounded-full border text-sm",
+                                  !isSameMonth(day, monthDate)
+                                    ? "text-gray-400 dark:text-red-500"
+                                    : "",
                                   hasEntry
                                     ? "bg-green-300 hover:bg-green-400"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -273,7 +280,6 @@ const DiaryList = () => {
                           })}
                         </div>
 
-                        {/* Horizontal Entry Cards */}
                         <div className="flex flex-col gap-3">
                           {weekEntries.map((e) => (
                             <div
@@ -282,7 +288,10 @@ const DiaryList = () => {
                               onClick={() => navigate(`/diary/${e.id}`)}
                             >
                               <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {format(new Date(e.created_at), "dd MMM, hh:mm a")}
+                                {format(
+                                  new Date(e.created_at),
+                                  "dd MMM, hh:mm a"
+                                )}
                               </div>
                               <div className="font-bold text-lg">{e.title}</div>
                             </div>
@@ -296,14 +305,21 @@ const DiaryList = () => {
             </div>
           )
         ) : (
-          /* Calendar View */
           <div className="bg-white dark:bg-card rounded-lg p-6 border">
             <div className="flex justify-between items-center mb-4">
-              <Button variant="ghost" onClick={() => setMonthDate(subMonths(monthDate, 1))}>
+              <Button
+                variant="ghost"
+                onClick={() => setMonthDate(subMonths(monthDate, 1))}
+              >
                 <ChevronsLeft size={20} />
               </Button>
-              <h2 className="text-2xl font-serif font-medium">{format(monthDate, "MMMM yyyy")}</h2>
-              <Button variant="ghost" onClick={() => setMonthDate(addMonths(monthDate, 1))}>
+              <h2 className="text-2xl font-serif font-medium">
+                {format(monthDate, "MMMM yyyy")}
+              </h2>
+              <Button
+                variant="ghost"
+                onClick={() => setMonthDate(addMonths(monthDate, 1))}
+              >
                 <ChevronsRight size={20} />
               </Button>
             </div>
@@ -314,7 +330,9 @@ const DiaryList = () => {
                   {day}
                 </div>
               ))}
-              {Array.from({ length: new Date(year, month, 1).getDay() - 1 }).map((_, i) => (
+              {Array.from({
+                length: new Date(year, month, 1).getDay() - 1,
+              }).map((_, i) => (
                 <div key={`empty-${i}`} />
               ))}
               {daysInMonth.map((day) => {
@@ -343,11 +361,14 @@ const DiaryList = () => {
               })}
             </div>
 
-            {/* Notes Section */}
             <div className="mt-6 border-t pt-4">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-xl font-semibold">Notes</h3>
-                <Button size="sm" variant="secondary" onClick={() => setNotes([...notes, ""])}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setNotes([...notes, ""])}
+                >
                   + Add
                 </Button>
               </div>
