@@ -124,7 +124,7 @@ export const LoginForm = () => {
           type="button"
           onClick={() => handleOAuthLogin("google")}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 text-white"
+          className="w-full flex items-center justify-center gap-2 text-black"
         >
           <Mail className="w-5 h-5" />
           Continue with Google
@@ -133,7 +133,7 @@ export const LoginForm = () => {
           type="button"
           onClick={() => handleOAuthLogin("github")}
           variant="outline"
-          className="w-full flex items-center justify-center gap-2 text-white"
+          className="w-full flex items-center justify-center gap-2 text-black"
         >
           <Github className="w-5 h-5" />
           Continue with GitHub
