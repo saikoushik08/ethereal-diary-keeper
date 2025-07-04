@@ -47,9 +47,13 @@ export const DiaryNav = () => {
     { path: "/profile", label: "Profile", icon: <User size={20} /> },
   ];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout();       // ✅ Ensure logout completes
+      navigate("/");        // ✅ Then navigate to home
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const toggleMobileMenu = () => {

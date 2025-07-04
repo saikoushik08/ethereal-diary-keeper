@@ -1,10 +1,14 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 
 interface UserProfile {
-  bio: string;
   id: string;
   username: string;
   avatar_url?: string;
@@ -25,7 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
@@ -38,31 +42,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        // Fetch user profile if user is logged in
-        if (newSession?.user) {
-          setTimeout(() => {
-            fetchProfile(newSession.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
 
-    // THEN check for existing session
+      if (newSession?.user) {
+        fetchProfile(newSession.user.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-      
+
       if (currentSession?.user) {
         fetchProfile(currentSession.user.id);
       }
+
       setIsLoading(false);
     });
 
@@ -77,14 +77,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from("profiles")
         .select("id, username, avatar_url")
         .eq("id", userId)
-        .maybeSingle();
+        .maybeSingle<UserProfile>();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data) {
-        setProfile(data);
+        const profile: UserProfile = {
+          id: data.id,
+          username: data.username,
+          avatar_url: data.avatar_url ?? undefined,
+        };
+        setProfile(profile);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -92,14 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      throw error;
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   };
 
   const signup = async (username: string, email: string, password: string) => {
@@ -112,17 +109,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       },
     });
-
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
   };
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
   };
 
   return (
