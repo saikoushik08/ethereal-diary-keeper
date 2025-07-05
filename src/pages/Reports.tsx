@@ -3,6 +3,7 @@ import { toZonedTime } from "date-fns-tz";
 import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
+import WeeklySummary from "@/components/WeeklySummary";
 import {
   LineChart,
   Line,
@@ -367,54 +368,7 @@ const Reports = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">{weeklyAnalysis.summary}</p>
-
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <span className="bg-blue-100 p-1 rounded-md mr-2">
-                    <LineChartIcon size={18} className="text-blue-600" />
-                  </span>
-                  Emotional Patterns
-                </h3>
-                <p className="mb-4 pl-8">{weeklyAnalysis.emotionalPatterns}</p>
-
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <span className="bg-green-100 p-1 rounded-md mr-2">
-                    <CheckCircle2 size={18} className="text-green-600" />
-                  </span>
-                  Achievements
-                </h3>
-                <ul className="mb-4 pl-8">
-                  {weeklyAnalysis.achievements.map((achievement, index) => (
-                    <li key={index} className="flex items-start mb-1">
-                      <span className="text-green-500 mr-2">✓</span>
-                      {achievement}
-                    </li>
-                  ))}
-                </ul>
-
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <span className="bg-yellow-100 p-1 rounded-md mr-2">
-                    <XCircle size={18} className="text-yellow-600" />
-                  </span>
-                  Areas for Improvement
-                </h3>
-                <p className="mb-4 pl-8">{weeklyAnalysis.improvement}</p>
-
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <span className="bg-purple-100 p-1 rounded-md mr-2">
-                    <BarChart2 size={18} className="text-purple-600" />
-                  </span>
-                  Goal Progression
-                </h3>
-                <p className="mb-4 pl-8">{weeklyAnalysis.goalProgress}</p>
-
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <span className="bg-red-100 p-1 rounded-md mr-2">
-                    <PieChart size={18} className="text-red-600" />
-                  </span>
-                  Notable Insights
-                </h3>
-                <p className="pl-8">{weeklyAnalysis.notable}</p>
+                <WeeklySummary />
               </CardContent>
             </Card>
 
