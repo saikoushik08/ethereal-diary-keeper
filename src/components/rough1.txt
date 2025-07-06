@@ -1,0 +1,315 @@
+import { DiaryNav } from "@/components/DiaryNav";
+import { useAuth } from "@/context/AuthContext";
+import { Navigate, Link, useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, CalendarDays, BookOpen, ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import {
+  startOfMonth, endOfMonth, eachDayOfInterval, format,
+  getMonth, getYear, subMonths, addMonths, isSameDay,
+  startOfWeek, endOfWeek, eachWeekOfInterval, isSameMonth
+} from "date-fns";
+import clsx from "clsx";
+
+interface Entry {
+  id: string;
+  title: string;
+  content: string;
+  mood: string;
+  tags: string[];
+  created_at: string;
+}
+
+const DiaryList = () => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [view, setView] = useState<"entries" | "calendar">("entries");
+
+  const [monthDate, setMonthDate] = useState(new Date());
+  const month = getMonth(monthDate);
+  const year = getYear(monthDate);
+
+  const [notes, setNotes] = useState<string[]>([]);
+  const [noteId, setNoteId] = useState<string | null>(null);
+  const [notesInitialized, setNotesInitialized] = useState(false);
+
+  const [expandedWeeks, setExpandedWeeks] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) return;
+
+    const fetchEntries = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("entries")
+          .select("*")
+          .eq("user_id", user!.id)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        setEntries(data as Entry[]);
+      } catch (e) {
+        console.error(e);
+        toast({ title: "Error", description: "Could not load entries", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEntries();
+  }, [isLoading, isAuthenticated, user, toast]);
+
+  useEffect(() => {
+    const loadNotes = async () => {
+      if (!user) return;
+
+      const res = await supabase
+        .from("monthly_notes")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("month", month)
+        .eq("year", year)
+        .limit(1);
+
+      const note = res.data?.[0] || null;
+
+      if (res.error) {
+        toast({ title: "Error", description: "Could not load notes", variant: "destructive" });
+      } else if (note) {
+        setNoteId(note.id);
+        setNotes(note.notes || []);
+      } else {
+        setNoteId(null);
+        setNotes([]);
+      }
+
+      setNotesInitialized(true);
+    };
+
+    loadNotes();
+  }, [month, year, user, toast]);
+
+  useEffect(() => {
+    if (!user || !notesInitialized) return;
+
+    const saveNotes = async () => {
+      if (noteId) {
+        const { error } = await supabase
+          .from("monthly_notes")
+          .update({ notes })
+          .eq("id", noteId);
+
+        if (error) console.error("Update error:", error);
+      } else if (notes.length > 0) {
+        const res = await supabase
+          .from("monthly_notes")
+          .insert([{ user_id: user.id, year, month, notes }])
+          .select()
+          .limit(1);
+
+        const inserted = res.data?.[0];
+
+        if (res.error) console.error("Insert error:", res.error);
+        else if (inserted?.id) setNoteId(inserted.id);
+      }
+    };
+
+    saveNotes();
+  }, [notes, user, noteId, notesInitialized, month, year]);
+
+  if (!isLoading && !isAuthenticated) return <Navigate to="/" />;
+
+  const filtered = entries.filter(e =>
+    e.title.toLowerCase().includes(searchQuery) ||
+    e.content.toLowerCase().includes(searchQuery) ||
+    e.tags.some(t => t.toLowerCase().includes(searchQuery))
+  );
+
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(monthDate),
+    end: endOfMonth(monthDate)
+  });
+
+  const weeks = eachWeekOfInterval({
+    start: startOfMonth(monthDate),
+    end: endOfMonth(monthDate)
+  }, { weekStartsOn: 1 });
+
+  const toggleWeek = (index: number) => {
+    setExpandedWeeks(prev =>
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    );
+  };
+
+  const contentClass = isMobile ? "pt-20 px-4 pb-8 w-full" : "pl-24 lg:pl-64 pt-8 pr-8 pb-8";
+
+  return (
+    <div className="min-h-screen bg-background dark:bg-[#111827] text-foreground dark:text-white">
+      <DiaryNav />
+      <div className={contentClass}>
+        <div className="text-center mb-4">
+          <h1 className="text-3xl font-serif font-bold">Diary Entries</h1>
+          <h2 className="text-2xl font-semibold mt-2">{format(monthDate, "MMMM yyyy")}</h2>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:justify-between mb-6">
+          <div className="flex gap-3 flex-wrap justify-center md:justify-end w-full">
+            <Input
+              className="w-48"
+              placeholder="Search…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value.toLowerCase())}
+            />
+            <Button variant={view === "entries" ? "default" : "outline"} onClick={() => setView("entries")}> <BookOpen className="mr-2" size={18} /> Entries </Button>
+            <Button variant={view === "calendar" ? "default" : "outline"} onClick={() => setView("calendar")}> <CalendarDays className="mr-2" size={18} /> Calendar </Button>
+            <Link to="/diary/new">
+              <Button><PlusCircle className="mr-2" />New Entry</Button>
+            </Link>
+          </div>
+        </div>
+
+        {view === "entries" ? (
+          loading ? <p>Loading…</p> : (
+            <div className="space-y-6">
+              {weeks.map((startOfWk, index) => {
+                const endOfWk = endOfWeek(startOfWk, { weekStartsOn: 1 });
+                const weekDays = eachDayOfInterval({ start: startOfWk, end: endOfWk })
+                  .filter(day => isSameMonth(day, monthDate));
+                const weekEntries = filtered.filter(e =>
+                  weekDays.some(day => isSameDay(new Date(e.created_at), day))
+                );
+                return (
+                  <div key={index} className="border rounded-lg bg-white dark:bg-card">
+                    <div
+                      className="cursor-pointer p-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-800"
+                      onClick={() => toggleWeek(index)}
+                    >
+                      <span className="font-semibold">Week {index + 1} ({format(weekDays[0], "MMM d")} – {format(weekDays[weekDays.length - 1], "MMM d")})</span>
+                      {expandedWeeks.includes(index) ? <ChevronUp /> : <ChevronDown />}
+                    </div>
+                    {expandedWeeks.includes(index) && (
+                      <div className="p-4">
+                        <div className="flex gap-2 flex-wrap justify-center mb-4">
+                          {weekDays.map(day => {
+                            const hasEntry = entries.some(e => isSameDay(new Date(e.created_at), day));
+                            return (
+                              <button
+                                key={day.toISOString()}
+                                className={clsx(
+                                  "w-10 h-10 flex items-center justify-center rounded-full border text-sm",
+                                  hasEntry ? "bg-green-300 hover:bg-green-400" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                                )}
+                                onClick={() => {
+                                  const entry = entries.find(e => isSameDay(new Date(e.created_at), day));
+                                  if (entry) navigate(`/diary/${entry.id}`);
+                                }}
+                              >
+                                {format(day, "d")}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {weekEntries.map(e => (
+                            <div
+                              key={e.id}
+                              className="border rounded-lg p-4 bg-white dark:bg-background cursor-pointer hover:shadow"
+                              onClick={() => navigate(`/diary/${e.id}`)}
+                            >
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{format(new Date(e.created_at), "dd MMM, hh:mm a")}</div>
+                              <div className="font-bold text-lg">{e.title}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          <div className="bg-white dark:bg-card rounded-lg p-6 border">
+            <div className="flex justify-between items-center mb-4">
+              <Button variant="ghost" onClick={() => setMonthDate(subMonths(monthDate, 1))}>
+                <ChevronsLeft size={20} />
+              </Button>
+              <h2 className="text-2xl font-serif font-medium">{format(monthDate, "MMMM yyyy")}</h2>
+              <Button variant="ghost" onClick={() => setMonthDate(addMonths(monthDate, 1))}>
+                <ChevronsRight size={20} />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2 text-center text-sm mb-4">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                <div key={day} className="font-medium">{day}</div>
+              ))}
+              {Array.from({ length: new Date(year, month, 1).getDay() - 1 }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {daysInMonth.map(day => {
+                const hasEntry = entries.some(e => isSameDay(new Date(e.created_at), day));
+                return (
+                  <div
+                    key={day.toISOString()}
+                    onClick={() => {
+                      const entry = entries.find(e => isSameDay(new Date(e.created_at), day));
+                      if (entry) navigate(`/diary/${entry.id}`);
+                    }}
+                    className={clsx(
+                      "rounded-full border p-2 cursor-pointer",
+                      hasEntry ? "bg-green-300 hover:bg-green-400" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    {format(day, "d")}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 border-t pt-4">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-xl font-semibold">Notes</h3>
+                <Button size="sm" variant="secondary" onClick={() => setNotes([...notes, ""])}>+ Add</Button>
+              </div>
+              <div className="space-y-3">
+                {notes.map((note, i) => (
+                  <div key={i} className="flex gap-2 items-start">
+                    <textarea
+                      className="w-full p-2 border rounded resize-none bg-background text-foreground"
+                      rows={2}
+                      value={note}
+                      onChange={(e) => {
+                        const updated = [...notes];
+                        updated[i] = e.target.value;
+                        setNotes(updated);
+                      }}
+                    />
+                    <Button size="icon" variant="destructive" onClick={() => {
+                      const updated = [...notes];
+                      updated.splice(i, 1);
+                      setNotes(updated);
+                    }}>×</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default DiaryList;
+hiii hfsj

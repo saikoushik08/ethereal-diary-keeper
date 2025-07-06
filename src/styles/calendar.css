@@ -1,0 +1,5 @@
+/* Override react-day-picker default selected styles */
+.rdp-day_hasEntry {
+  background-color: #86efac !important; /* green-300 */
+  color: black !important;
+}
