@@ -360,14 +360,16 @@ const Reports = () => {
               </Card>
             </div>
 
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Weekly Summary</CardTitle>
+            <Card className="md:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">
+                  Weekly Summary
+                </CardTitle>
                 <CardDescription>
                   AI-generated analysis based on your entries
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-2 pt-2">
                 <WeeklySummary />
               </CardContent>
             </Card>
