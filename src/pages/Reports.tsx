@@ -4,6 +4,8 @@ import { DiaryNav } from "@/components/DiaryNav";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import WeeklySummary from "@/components/WeeklySummary";
+import PreviousWeeks from "@/components/PreviousWeeks";
+import { WeeklySummaryModal } from "@/components/WeeklySummaryModal";
 import {
   LineChart,
   Line,
@@ -46,7 +48,7 @@ import {
   isSameDay,
 } from "date-fns";
 
-interface WeeklyReport {
+export interface WeeklyReport {
   id: number;
   dateRange: string;
   startDate: Date;
@@ -67,7 +69,8 @@ const Reports = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [weeklyReports, setWeeklyReports] = useState<WeeklyReport[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [selectedSummary, setSelectedSummary] = useState<string | null>(null);
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/" />;
@@ -409,11 +412,11 @@ const Reports = () => {
                         <ChevronDown className="h-5 w-5 text-gray-500 transition-transform ui-open:rotate-180" />
                       </CollapsibleTrigger>
 
-                      <CollapsibleContent className="p-4 pt-0 border-t border-gray-100">
+                      <CollapsibleContent className="p-4 pt-0 border-t border-gray-100 space-y-6">
                         {/* Writing Days */}
-                        <div className="mb-4">
-                          <h4 className="font-medium mb-2">Writing Days</h4>
-                          <div className="flex items-center space-x-1">
+                        <div>
+                          <h4 className="font-medium mb-2">🗓️ Writing Days</h4>
+                          <div className="flex items-center flex-wrap gap-2">
                             {eachDayOfInterval({
                               start: report.startDate,
                               end: report.endDate,
@@ -437,16 +440,31 @@ const Reports = () => {
                           </div>
                         </div>
 
-                        {/* Summary */}
-                        <div>
-                          <h4 className="font-medium mb-2">Summary</h4>
-                          <p className="text-gray-600">{report.summary}</p>
-                        </div>
+                        {/* Summary Toggle Box */}
+                        <>
+  <button
+    onClick={() => {
+      setSelectedSummary(report.summary ?? null);
+      setModalOpen(true);
+    }}
+    className="text-blue-600 hover:underline font-medium"
+  >
+    📄 View AI-Generated Weekly Summary
+  </button>
 
-                        {/* ✅ Mood Chart for current week only */}
-                        {report.id === 1 && report.moodByDate && (
-                          <div className="mt-6">
-                            <h4 className="font-medium mb-2">Mood Trend</h4>
+  {/* Modal component below */}
+  <WeeklySummaryModal
+    isOpen={isModalOpen}
+    onClose={() => setModalOpen(false)}
+    summary={selectedSummary}
+  />
+</>
+
+
+                        {/* Mood Trend */}
+                        {report.moodByDate && (
+                          <div>
+                            <h4 className="font-medium mb-2">📈 Mood Trend</h4>
                             <LiveMoodLineChart data={report.moodByDate} />
                           </div>
                         )}
@@ -495,6 +513,7 @@ const Reports = () => {
           </TabsContent>
         </Tabs>
       </div>
+    
     </div>
   );
 };

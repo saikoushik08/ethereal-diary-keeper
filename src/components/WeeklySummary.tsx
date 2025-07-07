@@ -1,3 +1,4 @@
+// src/components/WeeklySummary.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { format, startOfWeek, endOfWeek } from "date-fns";
@@ -53,19 +54,56 @@ export default function WeeklySummary() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEntries = async () => {
+    async function fetchAndGenerateSummary() {
       const start = startOfWeekIST(new Date());
       const end = endOfWeekIST(new Date());
 
-      const { data, error } = await supabase
+      const {
+        data: {
+          user
+        },
+        error: userError
+      } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError("User not authenticated.");
+        setLoading(false);
+        return;
+      }
+
+      const userId = user.id;
+
+      // Check for existing summary
+      const { data: existing, error: fetchError } = await supabase
+        .from("weekly_summaries")
+        .select("summary")
+        .eq("user_id", userId)
+        .eq("week_start", format(start, "yyyy-MM-dd"))
+        .eq("week_end", format(end, "yyyy-MM-dd"))
+        .maybeSingle();
+
+      if (existing?.summary) {
+        try {
+          const parsed = typeof existing.summary === "string"
+            ? JSON.parse(existing.summary)
+            : existing.summary;
+          setSummaryData(parsed);
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error("Error parsing stored summary:", e);
+        }
+      }
+
+      // Fetch entries if no summary exists
+      const { data, error: fetchEntriesError } = await supabase
         .from("entries")
         .select("*")
         .gte("created_at", start.toISOString())
         .lte("created_at", end.toISOString())
         .order("created_at", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching entries:", error);
+      if (fetchEntriesError) {
+        console.error("Error fetching entries:", fetchEntriesError);
         setError("Failed to load weekly summary.");
         setLoading(false);
         return;
@@ -78,8 +116,8 @@ export default function WeeklySummary() {
         content: entry.content,
         mood: entry.mood,
         tags: Array.isArray(entry.tags) ? entry.tags : [],
-        todos: Array.isArray(entry.todos) ? (entry.todos as TodoItem[]) : [],
-        images: Array.isArray(entry.images) ? (entry.images as string[]) : [],
+        todos: Array.isArray(entry.todos) ? entry.todos as TodoItem[] : [],
+        images: Array.isArray(entry.images) ? entry.images as string[] : [],
         created_at: entry.created_at,
         updated_at: entry.updated_at,
       }));
@@ -91,19 +129,15 @@ export default function WeeklySummary() {
       }
 
       const formatted = entries
-        .map((entry) => {
-          return `Date: ${format(new Date(entry.created_at), "yyyy-MM-dd")}
+        .map((entry) => `Date: ${format(new Date(entry.created_at), "yyyy-MM-dd")}
 Mood: ${entry.mood}
-Tags: ${entry.tags?.join(", ") || "None"}
-To-dos: ${
-            entry.todos?.map((t) => `${t.task} [${t.completed ? "✓" : "✗"}]`).join(", ") || "None"
-          }
-Text: ${entry.content?.slice(0, 500) || "No content"}
-Images: ${entry.images?.length || 0}\n`;
-        })
+Tags: ${entry.tags.join(", ") || "None"}
+To-dos: ${entry.todos.map((t) => `${t.task} [${t.completed ? "✓" : "✗"}]`).join(", ") || "None"}
+Text: ${entry.content.slice(0, 500) || "No content"}
+Images: ${entry.images.length}\n`)
         .join("\n---\n");
 
-      const prompt = `Based on the following diary entries, generate a weekly analysis object with this exact JSON format:
+      const prompt = `You are an expert diary analyst. Based on the following diary entries, return a JSON object exactly in this shape:
 
 {
   "summary": "...",
@@ -114,7 +148,15 @@ Images: ${entry.images?.length || 0}\n`;
   "notable": "..."
 }
 
-Avoid any explanation or formatting, just return valid JSON. Analyze this:
+**Requirements**:
+- The **summary** field must be a detailed paragraph of **3 to 5 complete sentences**, discussing mood trends, any changes over the week, and high-level takeaways.
+- **EmotionalPatterns**: At least 2 sentences describing how emotions shifted or stayed consistent.
+- **Achievements**: List any key wins or milestones.
+- **Improvement**: 1–2 sentences with actionable suggestions.
+- **GoalProgress**: 1–2 sentences on progress toward any goals.
+- **Notable**: 1–2 sentences highlighting anything unusual or interesting.
+
+Return **only** the valid JSON—no extra text. Here are the entries to analyze:
 
 ${formatted}
 `;
@@ -129,45 +171,43 @@ ${formatted}
           body: JSON.stringify({
             model: "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
             messages: [
-              {
-                role: "system",
-                content: "You are an assistant that returns only JSON structured summaries of diary entries.",
-              },
+              { role: "system", content: "You output exactly JSON, no fluff." },
               { role: "user", content: prompt },
             ],
-            temperature: 0.7,
+            temperature: 0.6,
           }),
         });
 
-        const result = await response.json();
-        const aiText = result.choices?.[0]?.message?.content;
-        const jsonMatch = aiText?.match(/{[\s\S]*}/);
-        if (!jsonMatch) throw new Error("No JSON found in AI response");
-
-        const parsed = JSON.parse(jsonMatch[0]) as WeeklySummaryData;
+        const json = await response.json();
+        const aiText = json.choices?.[0]?.message?.content ?? "";
+        const match = aiText.match(/{[\s\S]*}/);
+        if (!match) throw new Error("No JSON in AI response");
+        const parsed = JSON.parse(match[0]) as WeeklySummaryData;
         setSummaryData(parsed);
-      } catch (err) {
-        console.error("Error generating summary:", err);
-        setError("Failed to generate summary.");
+
+        // Save to Supabase
+        await supabase.from("weekly_summaries").insert([
+          {
+            user_id: userId,
+            week_start: format(start, "yyyy-MM-dd"),
+            week_end: format(end, "yyyy-MM-dd"),
+            summary: parsed,
+          },
+        ]);
+      } catch (e) {
+        console.error("Error generating or saving summary:", e);
+        setError("Failed to generate or store the summary.");
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    fetchEntries();
+    fetchAndGenerateSummary();
   }, []);
 
-  if (loading) {
-    return <p className="text-muted-foreground">Analyzing entries and generating summary...</p>;
-  }
-
-  if (error) {
-    return <p className="text-red-500 font-medium">{error}</p>;
-  }
-
-  if (!summaryData) {
-    return <p className="text-gray-500 italic">No summary available.</p>;
-  }
+  if (loading) return <p className="text-muted-foreground">Analyzing entries and generating summary…</p>;
+  if (error) return <p className="text-red-500 font-medium">{error}</p>;
+  if (!summaryData) return <p className="text-gray-500 italic">No summary available.</p>;
 
   return (
     <div className="space-y-6 p-6 bg-white rounded-lg shadow-md dark:bg-gray-900">
@@ -175,35 +215,30 @@ ${formatted}
         <h2 className="text-2xl font-bold text-blue-600">📝 Summary</h2>
         <p className="mt-2 text-lg text-gray-800 dark:text-gray-200">{summaryData.summary}</p>
       </section>
-
       <section>
         <h2 className="text-2xl font-bold text-green-600">💬 Emotional Patterns</h2>
         <p className="mt-2 text-lg text-gray-800 dark:text-gray-200">{summaryData.emotionalPatterns}</p>
       </section>
-
       <section>
         <h2 className="text-2xl font-bold text-purple-600">🏆 Achievements</h2>
         {summaryData.achievements.length > 0 ? (
           <ul className="list-disc ml-6 mt-2 text-lg text-gray-800 dark:text-gray-200">
-            {summaryData.achievements.map((item, idx) => (
-              <li key={idx}>{item}</li>
+            {summaryData.achievements.map((a, i) => (
+              <li key={i}>{a}</li>
             ))}
           </ul>
         ) : (
           <p className="mt-2 text-lg text-gray-500 italic">No achievements mentioned.</p>
         )}
       </section>
-
       <section>
         <h2 className="text-2xl font-bold text-yellow-600">🔧 Areas for Improvement</h2>
         <p className="mt-2 text-lg text-gray-800 dark:text-gray-200">{summaryData.improvement}</p>
       </section>
-
       <section>
         <h2 className="text-2xl font-bold text-pink-600">🎯 Goal Progress</h2>
         <p className="mt-2 text-lg text-gray-800 dark:text-gray-200">{summaryData.goalProgress}</p>
       </section>
-
       <section>
         <h2 className="text-2xl font-bold text-indigo-600">🌟 Notable Observations</h2>
         <p className="mt-2 text-lg text-gray-800 dark:text-gray-200">{summaryData.notable}</p>
